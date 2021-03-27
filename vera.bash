@@ -33,6 +33,7 @@ _ensure_dependencies() {
 is_valid_recipients() {
 	typeset -a recipients
 	IFS=" " read -r -a recipients <<< "$@"
+  # Remove the hyphen if you want all keys to be trusted
 	trusted='- m f u w s'
 
 	# All the keys ID must be valid (the public keys must be present in the database)
@@ -45,6 +46,8 @@ is_valid_recipients() {
 		elif ! _in "$trusted" "$trust"; then
 			_warning "The key ${gpg_id} is not trusted enough"
 			return 1
+    elif [[ "$trust" == "-" ]]; then
+      _warning "The key ${gpg_id} is not trusted enough but is being used anyway. Check to make sure this is your key."
 		fi
 	done
 
