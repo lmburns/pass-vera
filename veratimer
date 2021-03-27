@@ -7,5 +7,5 @@ launchagent="$HOME/Library/LaunchAgents/pass-close.password.vera.plist"
 
 /usr/local/mybin/veracrypt --text --dismount "$devices"
 
-launchctl unload "$launchagent"
+/bin/launchctl unload "$launchagent"
 rm -f "$launchagent"

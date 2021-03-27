@@ -100,10 +100,6 @@ _timer() {
       <key>Minute</key>
       <integer>$launch_minute</integer>
     </dict>
-    <key>StandardErrorPath</key>
-      <string>/Users/lucasburns/mybin/pass-vera/stderr.log</string>
-    <key>StandardOutPath</key>
-      <string>/Users/lucasburns/mybin/pass-vera/stout.log</string>
     <key>UserName</key>
       <string>$USER</string>
     <key>Umask</key>
