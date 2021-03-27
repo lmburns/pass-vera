@@ -1,0 +1,252 @@
+.TH pass-vera 1 "June 2019" "pass-vera"
+
+.SH NAME
+pass-vera \- A \fBpass\fP(1) extension that helps to keep the whole tree of
+password encrypted inside a \fBvera\fP(1).
+
+.SH SYNOPSIS
+\fBpass vera\fP [args] gpgid...
+.br
+\fBpass open \fP [args]
+.br
+\fBpass close\fP [args]
+
+.SH DESCRIPTION
+Due to the structure of \fBpass\fP(1), file and directory names are not encrypted
+in the password store. \fBpass vera\fP provides a convenient solution to put your
+password store in an encrypted drive with \fBveracrypt\fP(1) and then keep your
+password tree encrypted when you are not using it.
+
+It uses the same GPG key to encrypt passwords and veracrypt, therefore you don't need
+to manage more key or secret. Moreover, you can ask pass-vera to automatically
+close your store after a given time.
+
+.TP
+.B The new workflow is the following:
+.IP
+1. Create a password vera with \fBpass vera\fP. It creates a new vera and opens it
+in ~/.password-store. Then it initialises the password repository with the same
+GPG key.
+.IP
+2. Use vera as usual.
+.IP
+3. When finished close the password vera: \fBpass close\fP.
+.IP
+4. To use pass again, you need to open the password vera: \fBpass open\fP.
+
+
+.SH COMMAND
+
+.TP
+\fBpass vera\fP [ \fI--no-init\fP, \fI-n\fP ] [\fI--timer=time\fP, \fI-t time\fP]
+   [ \fI--path=subfolder\fP, \fI-p subfolder\fP ] [\fI--force\fP, \fI-f\fP] \fIgpg-id...\fP
+
+Create and initialise a new password vera. This command must be run first,
+before a password store can be used.
+
+Use
+.I gpg-id
+for encryption of both passwords and vera. Multiple gpg-ids may be specified,
+in order to encrypt the vera and each password with multiple ids.
+
+If \fI--path\fP or \fI-p\fP is specified, along with an argument,
+a specific password vera using gpg-id or a set of gpg-ids is assigned for that
+specific subfolder of the password store.
+
+If \fI--no-init\fP, \fI-n\fP is specified, do not initialise the password store.
+By default, pass-vera initialises the password store with the same key(s) it
+generated the vera. The purpose of this option is to let the user free to
+initialise the password store with a different key or set of keys.
+
+If \fI--timer\fP, \fI-t\fP is specified, along with an argument, the password
+store will be automatically closed using a \fBlaunchctl\fP(1) timer after a given time. The
+service will be unloaded once the vera drive is closed dismounted.
+
+If \fI--force\fP is specified, the password store will create or mount the
+password store even if a plain text swap is present. Make sure you know what you
+are doing if you force an operation.
+
+.TP
+\fBpass open\fP [\fI--timer=time\fP, \fI-t time\fP] [\fI--force\fP, \fI-f\fP] [\fIsubfolder\fP]
+Open a password vera. If a time parameter is given (e.g., 1 hour 5 minutes) then a launchctl agent
+will be loaded. After the specified time interval, a script will run and then it will dismount the drive and
+unload the agent.
+
+.TP ADD MULTIPLE TIMERS
+If \fI--timer\fP, \fI-t\fP is specified, along with an argument, the password
+store will be automatically closed using a launchctl timer after a given time.
+If a '.time' file was already present in the store, this time will be updated.
+Multiple timer can be used in the same time.
+
+If \fI--force\fP is specified, the password store will create or mount the
+password store even if a plain text swap is present. Make sure you know what you
+are doing if you force an operation.
+
+If \fIsubfolder\fP is specified, the password store will be opened in the subfolder.
+
+.TP
+\fBpass close\fP [\fIstore\fP]
+Close a password vera.
+
+If \fIstore\fP is specified, pass close will try to close this store.
+
+.SH OPTIONS
+.TP
+\fB\-n\fB, \-\-no-init\fR
+Do not initialise the password store
+
+.TP
+\fB\-t\fB, \-\-timer\fR
+Close the store after a given time
+
+.TP
+\fB\-p\fB, \-\-path\fR
+Create the store for that specific subfolder
+
+.TP
+\fB\-f\fB, \-\-force\fR
+Force the vera operations (i.e. even if swap is active)
+
+.TP
+\fB\-q\fB, \-\-quiet\fR
+Be quiet
+
+.TP
+\fB\-v\fB, \-\-verbose\fR
+Be verbose
+
+.TP
+\fB\-\-unsafe\fR
+Speed up vera creation (for testing purposes only)
+
+.TP
+\fB\-V\fB, \-\-version\fR
+Show version information
+
+.TP
+\fB\-h\fB, \-\-help\fR
+Show usage message
+
+
+.SH EXAMPLES
+.TP
+Create a new password vera
+.B zx2c4@laptop ~ $ pass vera Jason@zx2c4.com
+.br
+ (*) Your password vera has been created and opened in ~/.password-store.
+.br
+ (*) Password store initialised for Jason@zx2c4.com.
+.br
+  .  Your vera is: ~/.password.vera
+.br
+  .  Your vera key is: ~/.password.key.vera
+.br
+  .  You can now use pass as usual.
+.br
+  .  When finished, close the password vera using 'pass close'.
+
+.TP
+Open a password vera
+.B zx2c4@laptop ~ $ pass open
+.br
+ (*) Your password vera has been opened in ~/.password-store.
+.br
+  .  You can now use pass as usual.
+.br
+  .  When finished, close the password vera using 'pass close'.
+
+.TP
+Close a password vera
+.B zx2c4@laptop ~ $ pass close
+.br
+ (*) Your password vera has been closed.
+.br
+  .  Your passwords remain present in ~/.password.vera.
+
+.TP
+Create a new password vera and set a timer
+.B zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --timer=1h
+.br
+ (*) Your password vera has been created and opened in ~/.password-store.
+.br
+ (*) Password store initialised for Jason@zx2c4.com.
+.br
+  .  Your vera is: ~/.password.vera
+.br
+  .  Your vera key is: ~/.password.key.vera
+.br
+  .  You can now use pass as usual.
+.br
+  .  This password store will be closed in 1h
+.br
+.B zx2c4@laptop ~ $ pass open
+.br
+ (*) Your password vera has been opened in ~/.password-store.
+.br
+  .  You can now use pass as usual.
+.br
+  .  This password store will be closed in 1h
+
+.TP
+Open a password vera and set a timer
+.B zx2c4@laptop ~ $ pass open
+.br
+ (*) Your password vera has been opened in ~/.password-store.
+.br
+  .  You can now use pass as usual.
+.br
+  .  This password store will be closed in 10min
+
+
+
+.SH ENVIRONMENT VARIABLES
+.TP
+.I PASSWORD_STORE_VERA
+Path to vera executable
+.TP
+.I PASSWORD_STORE_VERA_FILE
+Path to the password vera, by default \fI~/.password.vera\fP
+.TP
+.I PASSWORD_STORE_VERA_KEY
+Path to the password vera key file by default \fI~/.password.key.vera\fP
+.TP
+.I PASSWORD_STORE_VERA_SIZE
+Password vera size in MB, by default \fI10\fP
+
+
+.SH SEE ALSO
+.BR pass(1),
+.BR veracrypt(1),
+.BR launchctl(1),
+.BR pass-import(1),
+.BR pass-update(1),
+.BR pass-audit(1),
+.BR pass-otp(1)
+
+
+.SH AUTHORS
+.B pass vera
+was written by
+.MT alexandre@pujol.io
+Alexandre Pujol
+.ME .
+and was modified by
+.MT lucas@burnsac.xyz
+Lucas Burns
+.ME .
+
+
+
+.SH COPYING
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.

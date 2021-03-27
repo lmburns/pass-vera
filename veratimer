@@ -1,0 +1,11 @@
+#!/bin/sh
+
+export PATH="/usr/local/mybin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+devices="$(veracrypt --text --list | rg --color=never 'pass' | awk '{print $2}')"
+launchagent="$HOME/Library/LaunchAgents/pass-close.password.vera.plist"
+
+/usr/local/mybin/veracrypt --text --dismount "$devices"
+
+launchctl unload "$launchagent"
+rm -f "$launchagent"
