@@ -18,13 +18,13 @@ all:
 
 install:
 	@install -v -d "$(DESTDIR)$(MANDIR)/man1"
-	@install -v -d "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/" "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/veratimer-resources/"
+	@install -v -d "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/" "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/vera-resources/"
 	@install -v -d "$(DESTDIR)$(BASHCOMPDIR)" "$(DESTDIR)$(ZSHCOMPDIR)"
 	@install -v -m 0755 $(PROG).bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/$(PROG).bash"
 	@install -v -m 0755 open.bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/open.bash"
 	@install -v -m 0755 close.bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/close.bash"
 	@install -v -m 0644 pass-$(PROG).1 "$(DESTDIR)$(MANDIR)/man1/pass-$(PROG).1"
-	@install -v -m 0744 veratimer "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/veratimer-resources/veratimer"
+	@install -v -m 0744 veratimer "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/vera-resources/veratimer"
 	@echo
 	@echo "pass-$(PROG) is installed succesfully"
 	@echo

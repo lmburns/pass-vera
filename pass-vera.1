@@ -63,13 +63,14 @@ store will be automatically closed using a \fBlaunchctl\fP(1) timer after a give
 service will be unloaded once the vera drive is closed dismounted.
 
 If \fI--force\fP is specified, the password store will create or mount the
-password store even if a plain text swap is present. Make sure you know what you
-are doing if you force an operation.
+password store to a volume that is in use, or it will force dismount a volume
+that is in use. This can also overwrite files, so make sure you are aware of
+what you are doing before using this option.
 
 .TP
 \fBpass open\fP [\fI--timer=time\fP, \fI-t time\fP] [\fI--force\fP, \fI-f\fP] [\fIsubfolder\fP]
 Open a password vera. If a time parameter is given (e.g., 1 hour 5 minutes) then a launchctl agent
-will be loaded. After the specified time interval, a script will run and then it will dismount the drive and
+will be loaded. After the specified time interval, a script will run that will dismount the drive and
 unload the agent.
 
 .TP ADD MULTIPLE TIMERS
@@ -79,8 +80,9 @@ If a '.time' file was already present in the store, this time will be updated.
 Multiple timer can be used in the same time.
 
 If \fI--force\fP is specified, the password store will create or mount the
-password store even if a plain text swap is present. Make sure you know what you
-are doing if you force an operation.
+password store to a volume that is in use, or it will force dismount a volume
+that is in use. This can also overwrite files, so make sure you are aware of
+what you are doing before using this option.
 
 If \fIsubfolder\fP is specified, the password store will be opened in the subfolder.
 
@@ -105,7 +107,7 @@ Create the store for that specific subfolder
 
 .TP
 \fB\-f\fB, \-\-force\fR
-Force the vera operations (i.e. even if swap is active)
+Force the vera operations (i.e. even if mounted volume is in use)
 
 .TP
 \fB\-q\fB, \-\-quiet\fR
@@ -117,7 +119,7 @@ Be verbose
 
 .TP
 \fB\-\-unsafe\fR
-Speed up vera creation (for testing purposes only)
+Does not encrypt free space when creating a device-hosted volume
 
 .TP
 \fB\-V\fB, \-\-version\fR

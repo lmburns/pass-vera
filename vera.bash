@@ -4,6 +4,7 @@ readonly VERA="${PASSWORD_STORE_VERA:-veracrypt}"
 readonly VERA_FILE="${PASSWORD_STORE_VERA_FILE:-$HOME/.password.vera}"
 readonly VERA_KEY="${PASSWORD_STORE_VERA_KEY:-$HOME/.password.vera.key}"
 readonly VERA_SIZE="${PASSWORD_STORE_VERA_SIZE:-10}"
+
 readonly TMP_PATH="/tmp/pass-close$(basename "$VERA_FILE").plist"
 readonly PLIST_PATH="$HOME/Library/LaunchAgents/${TMP_PATH##*/}"
 
@@ -26,7 +27,9 @@ _in() { [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]] && return 0 || return 1; }
 
 # pass vera depends on veracrypt
 _ensure_dependencies() {
-	command -v "$VERA" &> /dev/null || _die "Veracrypt is not present."
+	command -v "$VERA" &> /dev/null || _die "veracrypt is not present in your \$PATH"
+	command -v rg &> /dev/null || _die "ripgrep is not present \$PATH"
+  command -v getopt &> /dev/null || _die "getopt is not present \$PATH, install 'GNU coreutils'"
 }
 
 # $@ is the list of all the recipient used to encrypt a vera key
@@ -61,24 +64,36 @@ is_valid_recipients() {
 	return 1
 }
 
+_time_conversion() {
+  local file="$@"
+
+  if [[ $(echo "$file" | awk '{print NF}') != 4 ]]; then
+    echo "$file" \
+      | sed -E 's/(hr(s)?)/ \1/; s/(min(s)?)/ \1/' \
+      | sed -E 's/\bhrs\b/hours/; s/\bhr\b/hour/; s/\bmins\b/minutes/; s/\bmin\b/minute/'
+  else
+    echo "$file" \
+      | sed -E 's/\bhrs\b/hours/; s/\bhr\b/hour/; s/\bmins\b/minutes/; s/\bmin\b/minute/'
+  fi
+}
+
 # $1: Delay before to run the pass-close service
 # $2: Path in the password store to save the delay (may be empty)
 # return 0 on success, 1 otherwise
 _timer() {
-	local ret delay="$1"
-  local delay_hour="$(echo "$delay" | rg --color=never -o '\d+ hour(s)?')"
-  local delay_minute="$(echo "$delay" | rg --color=never -o '\d+ minute(s)?')"
-  local launch_hour="$(date -d "+$delay_hour $delay_minute" "+%H:%M:%S" | awk 'BEGIN{FS=":"} {print $1}')"
-  local launch_minute="$(date -d "+$delay_hour $delay_minute" "+%H:%M:%S" | awk 'BEGIN{FS=":"} {print $2}')"
-  ret=$?
+	local ret ii delay="$1" path="$2" file_hours file_mins
+  local timer_file="$PREFIX/$path/.timer"
+  local delay_hour="$(echo "$delay" | rg --color=never -io '\d+\s?h(ou)?r(s)?')"
+  local delay_minute="$(echo "$delay" | rg --color=never -io '\d+\s?min(ute)?s?')"
+  IFS=" " read -r delay_hour delay_minute <<< $(date -d "++$(_time_conversion "$delay_hour" "$delay_minute")" "+%R" | awk 'BEGIN{FS=":"} {print $1,$2}')
 
-  cat > "$TMP_PATH" <<-_EOF
+  cat <<-_EOF | tee "$TMP_PATH" &> /dev/null
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
     <key>Label</key>
-    <string>$(basename "$TMP_PATH")</string>
+    <string>${TMP_PATH##*/}</string>
     <key>ServiceDescription</key>
     <string>Close pass-vera</string>
     <key>EnvironmentalVariables</key>
@@ -89,16 +104,16 @@ _timer() {
     <key>ProgramArguments</key>
     <array>
       <string>/bin/sh</string>
-      <string>${PASSWORD_STORE_EXTENSIONS_DIR:-$PASSWORD_STORE_EXTENSIONS_DIR/.extensions}/veratimer-resources/veratimer</string>
+      <string>${PASSWORD_STORE_EXTENSIONS_DIR:-$PASSWORD_STORE_DIR/.extensions}/vera-resources/veratimer</string>
     </array>
     <key>RunAtLoad</key>
       <false/>
     <key>StartCalendarInterval</key>
     <dict>
       <key>Hour</key>
-      <integer>$launch_hour</integer>
+      <integer>$delay_hour</integer>
       <key>Minute</key>
-      <integer>$launch_minute</integer>
+      <integer>$delay_minute</integer>
     </dict>
     <key>UserName</key>
       <string>$USER</string>
@@ -107,17 +122,35 @@ _timer() {
   </dict>
 </plist>
 _EOF
+  ret=$?
+  _tmp_create
 
   local hour_check="$(rg -A1 -N --color=never 'Hour' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
   local min_check="$(rg -A1 -N --color=never 'Minute' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
   local digit_check="^[0-9]*$"
+
+  while read -r ii; do
+    _verbose "$ii"
+  done <"$TMP"
+
   if [[ $ret == 0 ]]; then
-    if ! [[ "$hour_check" =~ $digit_check ]] ; then
-      _warning "Incorrectly entered hour"
-      echo 1
-    elif ! [[ "$min_check" =~ $digit_check ]]; then
-      _warning "Incorrectly entered minute"
-      echo 1
+    [[ ! "${hour_check}" =~ ${digit_check} ]] && _warning "Incorrectly entered hour"; echo 1
+    [[ ! "${min_check}" =~ ${digit_check} ]] && _warning "Incorrectly entered minute"; echo 1
+    if [[ -r "$timer_file" ]]; then
+      local delay_original=$(date -d "$(_time_conversion "$(cat "$timer_file")")" "+%s")
+      local delay_file_mod=$(date -r "$timer_file" "+%s")
+      local new_delay=$(date -d "+$(_time_conversion $delay)" "+%s")
+      local now=$(date "+%s")
+
+      local now_delay=$(( $((delay_original - delay_file_mod)) + $((new_delay - now)) ))
+      local now_delay=$(bc <<< "scale=2; $now_delay/3600")
+
+      new_delay=$(echo "$now_delay" | awk -F'.' '{print $1 " hour", $2 " minute"}')
+      IFS=" " read -r hour minute <<< $(date -d "$new_delay" "+%R" | awk -F: '{print $1, $2}')
+      sed -Ei "/Hour/{n;s/[0-9]+/${hour##0}/g}" "$HOME/projects/github/pass-vera/pass-close.password.vera.plist"
+      sed -Ei "/Minute/{n;s/[0-9]+/${minute##0}/g}" "$HOME/projects/github/pass-vera/pass-close.password.vera.plist"
+      _screenlength
+      _success "${PLIST_PATH##*/} timer has been updated"
     else
       mv "$TMP_PATH" "$PLIST_PATH"
       if launchctl list | rg -q --color=never "${PLIST_PATH##*/}"; then
@@ -127,7 +160,8 @@ _EOF
         echo 0
       else
         _screenlength
-        launchctl load "$PLIST_PATH" && _success "${PLIST_PATH##*/} loaded"
+        launchctl load "$PLIST_PATH"
+        _success "${PLIST_PATH##*/} loaded"
         echo 0
       fi
     fi
@@ -135,7 +169,23 @@ _EOF
     _warning "Something horrible went wrong"
     echo 1
   fi
+
   return $ret
+}
+
+_tmp_create() {
+	local tfile
+  tmpdir
+	tfile="$(mktemp -u "$SECURE_TMPDIR/XXXXXXXXXXXXXXXXXXXX")" # Temporary file
+
+	[[ $? == 0 ]] || _die "Fatal error setting permission umask for temporary files."
+	[[ -r "$tfile" ]] && echo "Someone is messing up with us trying to hijack temporary files."
+
+	touch "$tfile"
+	[[ $? == 0 ]] || echo "Fatal error creating temporary file: $tfile."
+
+	TMP="$tfile"
+	return 0
 }
 
 # Set ownership when mounting a veracrypt drive
@@ -188,7 +238,7 @@ cmd_vera_usage() {
 _vera() {
   local ret
   local cmd="$@"
-  $VERA $cmd $FORCE
+  $VERA $TRUECRYPT $cmd $FORCE
   ret=$?
 
   [[ $ret == 0 ]] || _die "Unable to $cmd the password store"
@@ -260,6 +310,25 @@ cmd_close() {
 	return 0
 }
 
+_create_key() {
+  if [[ $MAKE_VERAKEY == 1 ]]; then
+    _vera --text --create-keyfile "$VERA_KEY" --random-source=/dev/urandom
+  else
+    gpg --fingerprint "$recipients_arg" | rg --color=never 'fingerprint' \
+      | awk 'BEGIN{FS="="} {print $2}' | sed -n '1p' | tr -d ' ' | tee "$VERA_KEY" &> /dev/null
+  fi
+}
+
+_test_key() {
+  if [[ ! -e "$VERA_KEY" ]]; then
+    _create_key
+  elif [[ -e "$VERA_KEY" ]] && [[ "$OVERWRITE_KEY" == 1 ]]; then
+    _create_key
+  else
+    _die "The vera key $VERA_KEY already exists. I won't overwrite it."
+  fi
+}
+
 # Create a new password vera and initialise the password repository.
 # $1: path subfolder
 # $@: gpg-ids
@@ -274,7 +343,7 @@ cmd_vera() {
 	if ! is_valid_recipients "${RECIPIENTS[@]}"; then
 		_die "You set an invalid GPG ID."
 	elif [[ -e "$VERA_KEY" ]]; then
-		_die "The vera key $VERA_KEY already exists. I won't overwrite it."
+    _test_key
 	elif [[ -e "$VERA_FILE" ]]; then
 		_die "The password vera $VERA_FILE already exists. I won't overwrite it."
 	elif [[ "$VERA_SIZE" -lt 10 ]]; then
@@ -295,11 +364,7 @@ cmd_vera() {
 		recipients_arg="${RECIPIENTS[0]}"
 	fi
 
-  if ! [[ -e "$HOME/.password.ver.key" ]]; then
-    _vera --text --create-keyfile "$VERA_KEY" --random-source=/dev/urandom
-    # gpg --fingerprint "$recipients_arg" | rg --color=never 'fingerprint' \
-    #   | awk 'BEGIN{FS="="} {print $2}' | sed -n '1p' | tr -d ' ' | tee $HOME/.password.vera.key >/dev/null
-  fi
+  _test_key
 
 	# Create the password vera
 	_verbose "Creating a password vera with the GPG key(s): ${RECIPIENTS[*]}"
@@ -351,22 +416,28 @@ QUIET=0
 FORCE=""
 NOINIT=0
 TIMER=""
+OVERWRITE_KEY=0
+MAKE_VERAKEY=0
+TRUECRYPT=""
 
 # Getopt options
-small_arg="vhVp:qnt:f"
-long_arg="verbose,help,version,path:,unsafe,quiet,no-init,timer:,force"
+small_arg="vhVokrp:qnt:f"
+long_arg="verbose,help,version,overwrite-key,vera-key,path:,truecrypt,unsafe,quiet,no-init,timer:,force"
 opts="$($GETOPT -o $small_arg -l $long_arg -n "$PROGRAM $COMMAND" -- "$@")"
 err=$?
 eval set -- "$opts"
 while true; do case $1 in
 	-q|--quiet) QUIET=1; VERBOSE=0; shift ;;
 	-v|--verbose) VERBOSE=1; shift ;;
+  -o|--overwrite-key) OVERWRITE_KEY=1; shift ;;
+  -k|--vera-key) MAKE_VERAKEY=1; shift ;;
 	-f|--force) FORCE="--force"; shift ;;
 	-h|--help) shift; cmd_vera_usage; exit 0 ;;
 	-V|--version) shift; cmd_vera_version; exit 0 ;;
 	-p|--path) id_path="$2"; shift 2 ;;
 	-t|--timer) TIMER="$2"; shift 2 ;;
 	-n|--no-init) NOINIT=1; shift ;;
+  -r|--truecrypt) TRUECRYPT="--truecrypt"; shift ;;
 	--unsafe) UNSAFE=1; shift ;;
 	--) shift; break ;;
 esac done
