@@ -14,6 +14,10 @@ readonly VERSION="1.0"
 readonly green='\e[0;32m' yellow='\e[0;33m' magenta='\e[0;35m'
 readonly Bred='\e[1;31m' Bgreen='\e[1;32m' Byellow='\e[1;33m'
 readonly Bmagenta='\e[1;35m' Bold='\e[1m' reset='\e[0m'
+readonly RED=$(tput setaf 1) GREEN=$(tput setaf 2) YELLOW=$(tput setaf 3)
+readonly BLUE=$(tput setaf 4) MAGENTA=$(tput setaf 5) CYAN=$(tput setaf 6)
+readonly BOLD=$(tput bold) RESET=$(tput sgr0) UNDERLINE=$(tput smul)
+
 _message() { [ "$QUIET" = 0 ] && printf '  %b.%b  %s\n' "$Bold" "$reset" "$*" >&2; }
 _warning() { [ "$QUIET" = 0 ] && printf '  %bw%b  %b%s%b\n' "$Byellow" "$reset" "$yellow" "$*" "$reset" >&2; }
 _success() { [ "$QUIET" = 0 ] && printf ' %b(*)%b %b%s%b\n' "$Bgreen" "$reset" "$green" "$*" "$reset" >&2; }
@@ -122,16 +126,12 @@ _timer() {
   </dict>
 </plist>
 _EOF
+
   ret=$?
-  _tmp_create
 
   local hour_check="$(rg -A1 -N --color=never 'Hour' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
   local min_check="$(rg -A1 -N --color=never 'Minute' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
   local digit_check="^[0-9]*$"
-
-  while read -r ii; do
-    _verbose "$ii"
-  done <"$TMP"
 
   if [[ $ret == 0 ]]; then
     [[ ! "${hour_check}" =~ ${digit_check} ]] && _warning "Incorrectly entered hour"; echo 1
@@ -149,24 +149,28 @@ _EOF
       IFS=" " read -r hour minute <<< $(date -d "$new_delay" "+%R" | awk -F: '{print $1, $2}')
       sed -Ei "/Hour/{n;s/[0-9]+/${hour##0}/g}" "$HOME/projects/github/pass-vera/pass-close.password.vera.plist"
       sed -Ei "/Minute/{n;s/[0-9]+/${minute##0}/g}" "$HOME/projects/github/pass-vera/pass-close.password.vera.plist"
+      echo "$new_delay" | tee "$timer_file" &> /dev/null
       _screenlength
       _success "${PLIST_PATH##*/} timer has been updated"
+      echo 0
     else
       mv "$TMP_PATH" "$PLIST_PATH"
       if launchctl list | rg -q --color=never "${PLIST_PATH##*/}"; then
         _screenlength
         launchctl unload "$PLIST_PATH" && launchctl load "$PLIST_PATH"
         _success "${PLIST_PATH##*/} reloaded"
+        echo "$delay" | tee "$timer_file" &> /dev/null
         echo 0
       else
         _screenlength
         launchctl load "$PLIST_PATH"
         _success "${PLIST_PATH##*/} loaded"
+        echo "$delay" | tee "$timer_file" &> /dev/null
         echo 0
       fi
     fi
   else
-    _warning "Something horrible went wrong"
+    _error "Something horrible went wrong"
     echo 1
   fi
 
@@ -200,7 +204,7 @@ _set_ownership() {
 
 cmd_vera_version() {
 	cat <<-_EOF
-	$PROGRAM vera $VERSION - A pass extension that helps to keep the whole tree of
+	${GREEN}${PROGRAM} vera${RESET} ${RED}${VERSION}${RESET} - A pass extension that helps to keep the whole tree of
 	                password encrypted inside veracrypt.
 	_EOF
 }
@@ -209,18 +213,18 @@ cmd_vera_usage() {
 	cmd_vera_version
 	echo
 	cat <<-_EOF
-	Usage:
-	    $PROGRAM vera [-n] [-t time] [-f] [-p subfolder] gpg-id...
+  ${YELLOW}Usage:${RESET}
+	    ${GREEN}${PROGRAM} vera${RESET} [-n] [-t time] [-f] [-p subfolder] gpg-id...
 	        Create and initialise a new password vera
 	        Use gpg-id for encryption of both vera and passwords
 
-	    $PROGRAM open [subfolder] [-t time] [-f]
+	    ${GREEN}${PROGRAM} open${RESET} [subfolder] [-t time] [-f]
 	        Open a password vera
 
-	    $PROGRAM close [store]
+	    ${GREEN}${PROGRAM} close${RESET} [store]
 	        Close a password vera
 
-	Options:
+  ${MAGENTA}Options:${RESET}
 	    -n, --no-init  Do not initialise the password store
 	    -t, --timer    Close the store after a given time
 	    -p, --path     Create the store for that specific subfolder
@@ -231,7 +235,7 @@ cmd_vera_usage() {
 	    -V, --version  Show version information.
 	    -h, --help     Print this help message and exit.
 
-	More information may be found in the pass-vera(1) man page.
+	More information may be found in the ${GREEN}pass-vera${RESET}${RED}(${RESET}${BLUE}1${RESET}${RED})${RESET} man page.
 	_EOF
 }
 
@@ -247,8 +251,7 @@ _vera() {
 # Open a password vera
 cmd_open() {
 	local path="$1"; shift;
-  local mountcheck="$("$VERA" --text --list 2>&1 | rg --color=never -o "\d" )"
-  local digit_check="^[0-9]+$"
+  local mountcheck="$("$VERA" --text --list 2>&1 | rg --color=never -Fq ".password.vera" )"
 
 	# Sanity checks
 	check_sneaky_paths "$path" "$VERA_FILE" "$VERA_KEY"
@@ -256,7 +259,7 @@ cmd_open() {
 	[[ -e "$VERA_KEY" ]] || _die "There is no password vera key."
 
 	# Open the password vera
-  if ! [[ "$mountcheck" =~ "$digit_check" ]]; then
+  if ! "$VERA" --text --list 2>&1 | rg --color=never -Fq ".password.vera"; then
     _verbose "Opening the password vera $VERA_FILE using the key $VERA_KEY"
 
     _vera --text --keyfiles "$VERA_KEY" --pim=0 --protect-hidden=no --mount "$VERA_FILE" "${PASSWORD_STORE_DIR:-$HOME/.password-store}"
@@ -268,13 +271,13 @@ cmd_open() {
 
 	# Read, initialise and start the timer
 	local timed=1
-  [[ -z "$TIMER" ]] || timed="$(_timer "$TIMER")"
+  [[ -z "$TIMER" ]] || timed="$(_timer "$TIMER" "$path")"
 
 	# Success!
 	_success "Your password vera has been opened in $PREFIX/."
 	_message "You can now use pass as usual."
 	if [[ $timed == 0 ]]; then
-    _message "This password store will be closed in: $(tput setaf 3)$TIMER"
+    _message "This password store will be closed in: ${GREEN}${TIMER}${RESET}"
     _screenlength
 	else
 		_message "When finished, close the password vera using 'pass close'."
@@ -399,9 +402,11 @@ cmd_vera() {
 		_message "You can now use pass as usual."
 	fi
 	if [[ $timed == 0 ]]; then
-		_message "This password store will be closed in $TIMER"
+    _message "This password store will be closed in: ${GREEN}${TIMER}${RESET}"
+    _screenlength
 	else
 		_message "When finished, close the password vera using 'pass close'."
+    _screenlength
 	fi
 	return 0
 }
