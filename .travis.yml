@@ -1,0 +1,22 @@
+os: osx
+
+language: bash
+
+addons:
+  homebrew:
+    taps: homebrew/cask
+    casks:
+    - osxfuse
+    - veracrypt
+    packages:
+      - pass
+      - coreutils
+      - ripgrep
+      - gawk
+      - openssl@1.1
+
+script:
+  - make tests
+
+notifications:
+  email: false
