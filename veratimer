@@ -1,16 +1,14 @@
 #!/bin/sh
 
-export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+export PATH="/usr/local/bin:/usr/bin:/bin:/Users/${USER}/.local/bin:$PATH"
 
 devices="$(veracrypt --text --list | rg --color=never 'pass' | awk '{print $2}')"
 launchagent="${HOME}/Library/LaunchAgents/pass-close.password.vera.plist"
 uid=$(id -u)
 
-veracrypt --text --dismount "$devices"
-/bin/launchctl bootout "gui/${uid}" "$launchagent"
-rm -f "$launchagent"
 rm -f "${PASSWORD_STORE_DIR:-$HOME/.password-store}/.timer"
+veracrypt --text --dismount "$devices"
+osascript -e "display notification \"Launch Agent unloaded\\nTimer Removed\" with title \"pass vera closed\""
 
-if [ -x "$(command -v terminal-notifier)" ]; then
-  terminal-notifier -title "pass vera" -message "vera drive unloaded"
-fi
+launchctl bootout "gui/${uid}" "$launchagent"
+rm -f "$launchagent"

@@ -17,18 +17,23 @@ in the password store. \fBpass vera\fP provides a convenient solution to put you
 password store in an encrypted drive with \fBveracrypt\fP(1) and then keep your
 password tree encrypted when you are not using it.
 
-It uses the same GPG key to encrypt passwords and veracrypt, therefore you don't need
-to manage more key or secret. Moreover, you can ask pass-vera to automatically
-close your store after a given time.
+It uses the same GPG key to encrypt passwords (by default) and the veracrypt drive,
+therefore you don't need to manage another key. Moreover, you can ask pass-vera
+to automatically close your store after a given time.
+
+.TP
+.B BBEFORE USING THIS PROGRAM:
+Make a backup of your password-store directory. After creating the vera, move the
+backup to the location of the mounted drive.
 
 .TP
 .B The new workflow is the following:
 .IP
-1. Create a password vera with \fBpass vera\fP. It creates a new vera and opens it
-in ~/.password-store. Then it initialises the password repository with the same
-GPG key.
+1. Create a password vera with \fBpass vera\fP <gpg-id>. It creates a new "vera"
+and opens it in PASSWORD_STORE_DIR (if unset, then ~/.password-store). Then it
+initializes the password repository with the same GPG key.
 .IP
-2. Use vera as usual.
+2. Use pass as usual.
 .IP
 3. When finished close the password vera: \fBpass close\fP.
 .IP
@@ -39,28 +44,53 @@ GPG key.
 
 .TP
 \fBpass vera\fP [ \fI--no-init\fP, \fI-n\fP ] [\fI--timer=time\fP, \fI-t time\fP]
-   [ \fI--path=subfolder\fP, \fI-p subfolder\fP ] [\fI--force\fP, \fI-f\fP] \fIgpg-id...\fP
+   [ \fI--path=subfolder\fP, \fI-p subfolder\fP ] [\fI--truecrypt\fP, \fI-r\fP]
+   [\fI--vera-key\fP, \fI-k\fP] [\fI--overwrite-key\fP, \fI-o\fP]
+   [\fI--force\fP, \fI-f\fP] \fIgpg-id...\fP
 
-Create and initialise a new password vera. This command must be run first,
-before a password store can be used.
+Create and initialize a new password vera. This command must be run first,
+before a password store can be used. You will be prompted to enter a password
+that will encrypt the mounted veracrypt drive.
 
 Use
 .I gpg-id
 for encryption of both passwords and vera. Multiple gpg-ids may be specified,
 in order to encrypt the vera and each password with multiple ids.
 
+If \fI--no-init\fP, \fI-n\fP is specified, do not initialize the password store.
+By default, pass-vera initializes the password store with the same key(s) it
+generated the vera. The purpose of this option is to give the user the option to
+initialize the password store with a different key or set of keys.
+
+If \fI--timer\fP, \fI-t\fP is specified, along with an argument, the password
+store will be automatically closed using a \fBlaunchctl\fP(1) timer that runs a script
+after a given time. The service will be unloaded once the vera drive is closed dismounted.
+
+.br
+Time must be formated in one of the following ways:
+\fB(1)\fP 1 hour 5 minutes
+\fB(2)\fP 1hour 5minutes
+\fB(3)\fP 1 hr 5 mins
+\fB(4)\fP 1hr 5mins
+
 If \fI--path\fP or \fI-p\fP is specified, along with an argument,
 a specific password vera using gpg-id or a set of gpg-ids is assigned for that
 specific subfolder of the password store.
 
-If \fI--no-init\fP, \fI-n\fP is specified, do not initialise the password store.
-By default, pass-vera initialises the password store with the same key(s) it
-generated the vera. The purpose of this option is to let the user free to
-initialise the password store with a different key or set of keys.
+If \fI--truecrypt\fP or \fI-r\fP is specified, veracrypt will enable TrueCrypt
+compatibility mode to enable mouting volumes that were created using TrueCrypt
+versions 6.x or 7.x. This option can be used by setting the \fIPASSWORD_STORE_VERA_FILE\fP
+to a file that is used by TrueCrypt.
 
-If \fI--timer\fP, \fI-t\fP is specified, along with an argument, the password
-store will be automatically closed using a \fBlaunchctl\fP(1) timer after a given time. The
-service will be unloaded once the vera drive is closed dismounted.
+If \fI--vera-key\fP or \fI-k\fP is specified, veracrypt will create a key specifically
+for the vera drive. This is stored in your home folder and is specified by the
+\fIPASSWORD_STORE_VERA_KEY\fP environment variable. If this key is lost, all the data within
+the vera will not be accessible.
+
+If \fI--overwrite-key\fP or \fI-o\fP is specified, the existing key that is used
+by pass vera to mount the drive will be overwritten with the new kind of key that
+is specified. This option should probably be used only whenever one is having some
+sort of issue and has backed up all of the data on the existing vera drive.
 
 If \fI--force\fP is specified, the password store will create or mount the
 password store to a volume that is in use, or it will force dismount a volume
@@ -68,16 +98,19 @@ that is in use. This can also overwrite files, so make sure you are aware of
 what you are doing before using this option.
 
 .TP
-\fBpass open\fP [\fI--timer=time\fP, \fI-t time\fP] [\fI--force\fP, \fI-f\fP] [\fIsubfolder\fP]
-Open a password vera. If a time parameter is given (e.g., 1 hour 5 minutes) then a launchctl agent
-will be loaded. After the specified time interval, a script will run that will dismount the drive and
-unload the agent.
+\fBpass open\fP [\fI--timer=time\fP, \fI-t time\fP] [\fI--truecrypt\fP, \fI-r\fP]
+   [\fI--force\fP, \fI-f\fP] [\fIdirectory\fP]
+
+Open a password vera. If a time parameter is given (e.g., 1 hour 5 minutes)
+then a launchctl agent will be loaded. After the specified time interval,
+a script will run that will dismount the drive and unload the agent.
 
 .TP ADD MULTIPLE TIMERS
 If \fI--timer\fP, \fI-t\fP is specified, along with an argument, the password
 store will be automatically closed using a launchctl timer after a given time.
-If a '.time' file was already present in the store, this time will be updated.
-Multiple timer can be used in the same time.
+If a '.timer' file was already present in the store, this time will be updated,
+which updates the launchctl agent. Therefore, multiple timers can be passed, one
+extending upon the next.
 
 If \fI--force\fP is specified, the password store will create or mount the
 password store to a volume that is in use, or it will force dismount a volume
@@ -85,6 +118,7 @@ that is in use. This can also overwrite files, so make sure you are aware of
 what you are doing before using this option.
 
 If \fIsubfolder\fP is specified, the password store will be opened in the subfolder.
+Otherwise, pass vera will open in \fIPASSWORD_STORE_DIR\fP.
 
 .TP
 \fBpass close\fP [\fIstore\fP]
@@ -95,7 +129,7 @@ If \fIstore\fP is specified, pass close will try to close this store.
 .SH OPTIONS
 .TP
 \fB\-n\fB, \-\-no-init\fR
-Do not initialise the password store
+Do not initialize the password store
 
 .TP
 \fB\-t\fB, \-\-timer\fR
@@ -104,6 +138,18 @@ Close the store after a given time
 .TP
 \fB\-p\fB, \-\-path\fR
 Create the store for that specific subfolder
+
+.TP
+\fB\-r\fB, \-\-truecrypt\fR
+Enable compatiblity with TrueCrypt
+
+.TP
+\fB\-k\fB, \-\-vera\-key\fR
+Create a key with /dev/urandom instead of GPG
+
+.TP
+\fB\-o\fB, \-\-overwrite\-key\fR
+Overwrite existing key in favor of the one specified
 
 .TP
 \fB\-f\fB, \-\-force\fR
@@ -116,6 +162,12 @@ Be quiet
 .TP
 \fB\-v\fB, \-\-verbose\fR
 Be verbose
+
+.TP
+\fB\-d\fB, \-\-debug\fR
+Enable debuggin of the launch agent. The path of the stderr file will
+be $HOME/pass-vera-stderr.log and the path of the stdout file will be
+$HOME/pass-vera-stdout.log
 
 .TP
 \fB\-\-unsafe\fR
@@ -131,13 +183,20 @@ Show usage message
 
 
 .SH EXAMPLES
+
 .TP
 Create a new password vera
 .B zx2c4@laptop ~ $ pass vera Jason@zx2c4.com
 .br
+  Enter password:
+.br
+  Done: 100.000%  Speed: 4.6 MiB/s  Left: 0 s
+.br
+  The VeraCrypt volume has been successfully created.
+.br
  (*) Your password vera has been created and opened in ~/.password-store.
 .br
- (*) Password store initialised for Jason@zx2c4.com.
+ (*) Password store initialized for Jason@zx2c4.com.
 .br
   .  Your vera is: ~/.password.vera
 .br
@@ -150,6 +209,8 @@ Create a new password vera
 .TP
 Open a password vera
 .B zx2c4@laptop ~ $ pass open
+.br
+  Enter password for ~/.password.vera:
 .br
  (*) Your password vera has been opened in ~/.password-store.
 .br
@@ -167,11 +228,11 @@ Close a password vera
 
 .TP
 Create a new password vera and set a timer
-.B zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --timer=1h
+.B zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --timer=1hr
 .br
  (*) Your password vera has been created and opened in ~/.password-store.
 .br
- (*) Password store initialised for Jason@zx2c4.com.
+ (*) Password store initialized for Jason@zx2c4.com.
 .br
   .  Your vera is: ~/.password.vera
 .br
@@ -228,11 +289,8 @@ Password vera size in MB, by default \fI10\fP
 
 .SH AUTHORS
 .B pass vera
-was written by
-.MT alexandre@pujol.io
-Alexandre Pujol
 .ME .
-and was modified by
+was written by
 .MT lucas@burnsac.xyz
 Lucas Burns
 .ME .
