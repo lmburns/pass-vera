@@ -14,9 +14,3 @@ addons:
       - ripgrep
       - gawk
       - openssl@1.1
-
-script:
-  - make tests
-
-notifications:
-  email: false

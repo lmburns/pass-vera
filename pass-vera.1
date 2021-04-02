@@ -5,9 +5,10 @@ pass-vera \- A \fBpass\fP(1) extension that adds another layer of encryption
 by encrypting the password-store inside a \fBveracrypt\fP(1) drive.
 
 .SH SYNOPSIS
-\fBpass vera\fP [\fB-k\fP | \fB--tmp-key\fP] [\fB-n\fP] [\fB-o\fP] [\fB-p\fP \fIpath\fP] [\fB-q\fP | \fB-v\fP] [\fB-r\fP] [\fB-s\fP] [\fB-t\fP \fItime\fP] \fI<gpg-id>\fP
+\fBpass vera\fP \fI<gpg-id>\fP [\fB-n\fP] [\fB-t\fP] [\fB-k\fP | \fB--tmp-key\fP] [\fB-o\fP] [\fB-o\fP] [\fB-p\fP \fIpath\fP] [\fB-q\fP | \fB-v\fP] [\fB--for-me\fP]
+                   [\fB-r\fP] [\fB-s\fP] [\fB-t\fP \fItime\fP]
 .br
-\fBpass open\fP [\fB-f\fP] [\fB-q\fP | \fB-v\fP] [\fB-r\fP] [\fB-t\fP \fItime\fP]
+\fBpass open\fP [\fB-f\fP] [\fB-q\fP | \fB-v\fP] [\fB-r\fP] [\fB-i\fP] [\fB-t\fP \fItime\fP]
 .br
 \fBpass close\fP [\fB-f\fP] [\fB-q\fP | \fB-v\fP]
 
@@ -51,10 +52,9 @@ location, otherwise copy it to \fI~/.password-store\fP. Now, use pass as usual.
 .SH COMMAND
 
 .TP
-\fBpass vera\fP [ \fB--no-init\fP, \fB-n\fP ] [\fB--timer\fP=\fItime\fP, \fB-t\fP \fItime\fP]
-   [ \fB--path\fP=\fIsubfolder\fP, \fB-p\fP \fIsubfolder\fP ] [\fB--truecrypt\fP, \fB-r\fP]
-   [\fB--vera-key\fP, \fB-k\fP] [\fB--overwrite-key\fP, \fB-o\fP] [\fB--tmp-key\fP]
-   [\fB--force\fP, \fB-f\fP] [\fB--status\fP, \fB-s\fP] \fI<gpg-id>\fP
+\fBpass vera\fP \fI<gpg-id>\fP [ \fB--no-init\fP, \fB-n\fP ] [\fB--timer\fP=\fItime\fP, \fB-t\fP \fItime\fP] [ \fB--path\fP=\fIsubfolder\fP, \fB-p\fP \fIsubfolder\fP ]
+   [\fB--truecrypt\fP, \fB-c\fP] [\fB--vera-key\fP, \fB-k\fP] [\fB--overwrite-key\fP, \fB-o\fP] [\fB--tmp-key\fP] [\fB--invisi-key\fP, \fB-i\fP]
+   [\fB--force\fP, \fB-f\fP] [\fB--status\fP, \fB-s\fP] [\fB--for-me\fP] [\fB--reencrypt\fP, \fB-r\fP]
 
 Create and initialize a new password vera. This command must be run first,
 before a password store can be used. The user will be prompted with a blank text
@@ -118,9 +118,23 @@ by pass vera to mount the drive will be overwritten with the new kind of key tha
 is specified. This option should be used only whenever one is having some sort of
 issue setting pass-vera up, and has backed up all of the data on the existing vera drive.
 
+If \fB--invisi-key\fP or \fB-i\fP is specified, the key that is created will be
+inside of a directory that will automatically shred itself once vera is mounted.
+The difference between the invisible key and the temporary key is that the invisible
+key can be used again, except that it is not the same file. VeraCrypt works in a way
+such that a key is considered to be the same if it has the same filename and same
+contents. Therefore, after using this option, later when one is opening the vera,
+\fBpass open --invisi-key\fP can be used and it will work the same as if the key had
+never been deleted.
+
 If \fB--tmp-key\fP is specified, a one-time key will be created and all data that is
 placed within this drive while it is mounted will no longer be accessible when the
 drive is dismounted.
+
+If \fB--for-me\fP is specified, pass vera will copy an existing password-store to
+the location of the new password-store whenever it is being created. When using this option,
+it would still be wise to backup the password-store directory until one has made sure that
+it does work.
 
 If \fB--force\fP is specified, the password vera will create or mount the
 password store to a volume that is in use, or it will force dismount a volume
