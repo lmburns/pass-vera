@@ -2,6 +2,8 @@ os: osx
 
 language: bash
 
+sudo: false
+
 addons:
   homebrew:
     taps: homebrew/cask
@@ -14,3 +16,7 @@ addons:
       - ripgrep
       - gawk
       - openssl@1.1
+      - shellcheck
+
+script:
+  - shellcheck *.bash

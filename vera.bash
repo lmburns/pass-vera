@@ -15,11 +15,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# shellcheck disable=SC2015,SC2181
+
 readonly VERSION="1.0"
 
 readonly RED=$(tput setaf 1) GREEN=$(tput setaf 2) YELLOW=$(tput setaf 3)
 readonly BLUE=$(tput setaf 4) MAGENTA=$(tput setaf 5) CYAN=$(tput setaf 6)
-readonly BOLD=$(tput bold) RESET=$(tput sgr0) UNDERLINE=$(tput smul)
+readonly BOLD=$(tput bold) RESET=$(tput sgr0)
 
 # environmental variables that can be set
 readonly VERA="${PASSWORD_STORE_VERA:-veracrypt}"
@@ -35,10 +37,10 @@ readonly TIMER_FILE="${PREFIX}/${path}/.timer"
 typeset -a VERA_MOUNT_OPTS VERA_CREATE_OPTS
 
 # veracrypt mounting options
-VERA_MOUNT_OPTS=( "--text" "--keyfiles" $VERA_KEY "--pim=0" "--protect-hidden=no" "--mount" $VERA_FILE "${PREFIX}/${path}" )
+VERA_MOUNT_OPTS=( "--text" "--keyfiles" "$VERA_KEY" "--pim=0" "--protect-hidden=no" "--mount" "$VERA_FILE" "${PREFIX}/${path}" )
 
 # veracrypt creating options
-VERA_CREATE_OPTS=( "--text" "--volume-type=normal" "--create" $VERA_FILE "--size=${VERA_SIZE}M" "--encryption=aes" "--hash=sha-512" "--filesystem=exFAT" "--pim=0" "--keyfiles" $VERA_KEY "--random-source=/dev/urandom" )
+VERA_CREATE_OPTS=( "--text" "--volume-type=normal" "--create" "$VERA_FILE" "--size=${VERA_SIZE}M" "--encryption=aes" "--hash=sha-512" "--filesystem=exFAT" "--pim=0" "--keyfiles" "$VERA_KEY" "--random-source=/dev/urandom" )
 
 # add armor to gpg options
 GPG_OPTS+=( "--armor" )
@@ -56,8 +58,9 @@ _in() { [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]] && return 0 || return 1; }
 
 # test for ascii art programs
 _test_lolcat() { command -v lolcat >/dev/null && lolcat="lolcat" || lolcat="cat"; }
-_test_figlet() { _test_lolcat; command -v figlet >/dev/null && printf "%b\n" "$(figlet -c $1 | $lolcat )"; }
+_test_figlet() { _test_lolcat; command -v figlet >/dev/null && figlet -c "$1" | "$lolcat"; }
 _test_toilet() { _test_lolcat; command -v >/dev/null && toilet -f smblock -F border --filter gay "$1" | $lolcat; }
+_fancy_output() { _test_toilet "$1" || _test_figlet "$1" || _success "$1"; }
 _screenlength() { _test_lolcat; printf "%$(tput cols)s%b" | tr " " "=" | $lolcat >&2; }
 
 # mime-checker functions
@@ -83,36 +86,36 @@ cmd_vera_usage() {
 	echo
 	cat <<-_EOF
   ${YELLOW}Usage:${RESET}
-	    ${GREEN}${PROGRAM} vera${RESET} [-n] [-t time] [-f] [-p subfolder] [-r]
-              [-k | --tmp-key] [-o] [-s] <gpg-id>
+	    ${GREEN}${PROGRAM} vera${RESET} ${MAGENTA}<${RESET}${CYAN}gpg-id${RESET}${MAGENTA}>${RESET} ${MAGENTA}[${RESET}${BLUE}-n${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-t${RESET} ${YELLOW}time${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-f${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-p${RESET} ${YELLOW}subfolder${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-s${RESET}${MAGENTA}]${RESET}
+                        ${MAGENTA}[${RESET}${BLUE}-i${RESET} ${MAGENTA}|${RESET} ${BLUE}-k${RESET} ${MAGENTA}|${RESET} ${BLUE}--tmp-key${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}--for-me${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-r${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-o${RESET}${MAGENTA}]${RESET}
 	        Create and initialize a new password vera
 	        Use gpg-id for encryption of both vera and passwords
 
-	    ${GREEN}${PROGRAM} open${RESET} [subfolder] [-t time] [-f]
+	    ${GREEN}${PROGRAM} open${RESET} ${MAGENTA}[${RESET}${YELLOW}subfolder${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-i${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-t${RESET} ${YELLOW}time${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-f${RESET}${MAGENTA}]${RESET}
 	        Open a password vera
 
-	    ${GREEN}${PROGRAM} close${RESET} [store]
+	    ${GREEN}${PROGRAM} close${RESET} ${MAGENTA}[${RESET}${YELLOW}store${RESET}${MAGENTA}]${RESET}
 	        Close a password vera
 
   ${MAGENTA}Options:${RESET}
-	    -n, --no-init        Do not initialize the password store
-	    -t, --timer          Close the store after a given time
-	    -p, --path           Create the store for that specific subfolder
-	    -r, --truecrypt      Enable compatibility with truecrypt
-	    -k, --vera-key       Create a key with veracrypt instead of GPG
-	    -o, --overwrite-key  Overwrite existing key
-	    -i, --invisi-key     Create a key that doesn't exist when it's not being used
-	        --tmp-key        Generate a one time temporary key
-	        --for-me         Copy existing password-store to new one when creating vera
-	    -r, --reencrypt      Reencrypt passwords when creating to new vera (use with --for-me)
-	    -f, --force          Force operation (i.e. even if mounted volume is active)
-	    -s, --status         Show status of pass vera (open or closed)
-	    -q, --quiet          Be quiet
-	    -v, --verbose        Be verbose
-	    -d, --debug          Debug the launchctl agent with a stderr file located in \$HOME folder
-	        --unsafe         Speed up vera creation (for testing only)
-	    -V, --version        Show version information.
-	    -h, --help           Print this help message and exit.
+	    ${BLUE}-n${RESET}, ${BLUE}--no-init${RESET}        Do not initialize the password store
+	    ${BLUE}-t${RESET}, ${BLUE}--timer${RESET}          Close the store after a given time
+	    ${BLUE}-p${RESET}, ${BLUE}--path${RESET}           Create the store for that specific subfolder
+	    ${BLUE}-c${RESET}, ${BLUE}--truecrypt${RESET}      Enable compatibility with truecrypt
+	    ${BLUE}-k${RESET}, ${BLUE}--vera-key${RESET}       Create a key with veracrypt instead of GPG
+	    ${BLUE}-o${RESET}, ${BLUE}--overwrite-key${RESET}  Overwrite existing key
+	    ${BLUE}-i${RESET}, ${BLUE}--invisi-key${RESET}     Create a key that doesn't exist when it's not being used
+	        ${BLUE}--tmp-key${RESET}        Generate a one time temporary key
+	        ${BLUE}--for-me${RESET}         Copy existing password-store to new one when creating vera
+	    ${BLUE}-r${RESET}, ${BLUE}--reencrypt${RESET}      Reencrypt passwords when creating to new vera (use with --for-me)
+	    ${BLUE}-f${RESET}, ${BLUE}--force${RESET}          Force operation (i.e. even if mounted volume is active)
+	    ${BLUE}-s${RESET}, ${BLUE}--status${RESET}         Show status of pass vera (open or closed)
+	    ${BLUE}-q${RESET}, ${BLUE}--quiet${RESET}          Be quiet
+	    ${BLUE}-v${RESET}, ${BLUE}--verbose${RESET}        Be verbose
+	    ${BLUE}-d${RESET}, ${BLUE}--debug${RESET}          Debug the launchctl agent with a stderr file located in \$HOME folder
+	        ${BLUE}--unsafe${RESET}         Speed up vera creation (for testing only)
+	    ${BLUE}-V${RESET}, ${BLUE}--version${RESET}        Show version information.
+	    ${BLUE}-h${RESET}, ${BLUE}--help${RESET}           Print this help message and exit.
 
 	More information may be found in the ${GREEN}pass-vera${RESET}${RED}(${RESET}${BLUE}1${RESET}${RED})${RESET} man page.
 _EOF
@@ -138,7 +141,7 @@ is_valid_recipients() {
 	for gpg_id in "${recipients[@]}"; do
 		trust="$(gpg --with-colons --batch --list-keys "$gpg_id" 2> /dev/null | \
 				    awk 'BEGIN { FS=":" } /^pub/ { print $2; exit}')"
-		if [[ $? != 0 ]]; then
+		if [[ $? -ne 0 ]]; then
 			_warning "${gpg_id} is not a valid key ID."
 			return 1
 		elif ! _in "$trusted" "$trust"; then
@@ -162,7 +165,7 @@ is_valid_recipients() {
 	# at least one private key must be present
 	for gpg_id in "${recipients[@]}"; do
 		gpg --with-colons --batch --list-secret-keys "$gpg_id" &> /dev/null
-		if [[ $? = 0 ]]; then
+		if [[ $? -eq 0 ]]; then
 			return 0
 		fi
 	done
@@ -172,14 +175,14 @@ is_valid_recipients() {
 # convert various time formats (e.g., 1hr vs 1 hour)
 # $@: file or variable that needs conversion
 _time_conversion() {
-  local file="$@"
+  local file=("$@")
 
-  if [[ $(echo "$file" | awk '{print NF}') != 4 ]]; then
-    echo "$file" \
+  if [[ $(echo "${file[@]}" | awk '{print NF}') != 4 ]]; then
+    echo "${file[@]}" \
       | sed -E 's/(hr(s)?)/ \1/; s/(min(s)?)/ \1/' \
       | sed -E 's/\bhrs\b/hours/; s/\bhr\b/hour/; s/\bmins\b/minutes/; s/\bmin\b/minute/'
   else
-    echo "$file" \
+    echo "${file[@]}" \
       | sed -E 's/\bhrs\b/hours/; s/\bhr\b/hour/; s/\bmins\b/minutes/; s/\bmin\b/minute/'
   fi
 }
@@ -188,11 +191,13 @@ _time_conversion() {
 # $2: path in the password store to save a timer file (not required)
 # return 0 on success, 1 otherwise
 _timer() {
-	local ret delay="$1" path="$2"
-  local uid=$(id -u)
-  local delay_hour="$(echo "$delay" | rg --color=never -io '\d+\s?h(ou)?r(s)?')"
-  local delay_minute="$(echo "$delay" | rg --color=never -io '\d+\s?min(ute)?s?')"
-  IFS=" " read -r delay_hour delay_minute <<< $(date -d "++$(_time_conversion "$delay_hour" "$delay_minute")" "+%R" | awk 'BEGIN{FS=":"} {print $1,$2}')
+	local ret delay="$1" path="$2" uid delay_hour delay_minute
+  uid="$(id -u "$USER")"
+  delay_hour="$(echo "$delay" | rg --color=never -io '\d+\s?h(ou)?r(s)?')"
+  delay_minute="$(echo "$delay" | rg --color=never -io '\d+\s?min(ute)?s?')"
+  IFS=" " read -r delay_hour delay_minute <<< "$(date -d "++$(_time_conversion "$delay_hour" "$delay_minute")" "+%R" | awk 'BEGIN{FS=":"} {print $1,$2}')"
+
+  [[ -n "$path" ]] && TIMER_FILE="${TIMER_FILE%/*}/${path}/.timer"
 
   local launch_debug=""
   if [[ $DEBUG -eq 1 ]]; then
@@ -215,7 +220,7 @@ _timer() {
     <key>EnvironmentalVariables</key>
     <dict>
       <key>PATH</key>
-      <string>/usr/local/bin:${EXTENSIONS:-$SYSTEM_EXTENSION_DIR}:/usr/local/bin:$(dirname $(command -v veracrypt))</string>
+      <string>/usr/local/bin:${EXTENSIONS:-$SYSTEM_EXTENSION_DIR}:/usr/local/bin:$(dirname "$(command -v veracrypt)")</string>
     </dict>
     <key>ProgramArguments</key>
     <array>
@@ -240,27 +245,28 @@ _timer() {
 </plist>
 _EOF
 
-  local ret=$?
-  local hour_check="$(rg -A1 -N --color=never 'Hour' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
-  local min_check="$(rg -A1 -N --color=never 'Minute' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
-  local digit_check="^[0-9]*$"
+  local ret=$? hour_check min_check digit_check
+  hour_check="$(rg -A1 -N --color=never 'Hour' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
+  min_check="$(rg -A1 -N --color=never 'Minute' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
+  digit_check="^[0-9]*$"
 
-  if [[ $ret == 0 ]]; then
+  if [[ $ret -eq 0 ]]; then
     [[ ! "${hour_check}" =~ ${digit_check} ]] && _error "Incorrectly entered hour" && exit 1
     [[ ! "${min_check}" =~ ${digit_check} ]] && _error "Incorrectly entered minute" && exit 1
     if [[ -r "$TIMER_FILE" ]]; then
       [[ ! -e "$PLIST_FILE" ]] && mv "$TMP_PATH" "$PLIST_FILE"
       # process of updating the already existing timer
-      local delay_original=$(date -d "$(_time_conversion "$(cat "$TIMER_FILE")")" "+%s")
-      local delay_file_mod=$(date -r "$TIMER_FILE" "+%s")
-      local new_delay=$(date -d "+$(_time_conversion $delay)" "+%s")
-      local now=$(date "+%s")
+      local delay_original delay_file_mod new_delay now now_delay
+      delay_original=$(date -d "$(_time_conversion "$(cat "$TIMER_FILE")")" "+%s")
+      delay_file_mod=$(date -r "$TIMER_FILE" "+%s")
+      new_delay=$(date -d "+$(_time_conversion "$delay")" "+%s")
+      now=$(date "+%s")
 
-      local now_delay=$(( $((delay_original - delay_file_mod)) + $((new_delay - now)) ))
-      local now_delay=$(bc <<< "scale=2; $now_delay/3600")
+      now_delay=$(( $((delay_original - delay_file_mod)) + $((new_delay - now)) ))
+      now_delay=$(bc <<< "scale=2; $now_delay/3600")
 
       new_delay=$(echo "$now_delay" | awk -F'.' '{printf ("%.0f hour %.0f minute\n", $1, $2/100*60)}')
-      IFS=" " read -r hour minute <<< $(date -d "$new_delay" "+%R" | awk -F: '{print $1, $2}')
+      IFS=" " read -r hour minute <<< "$(date -d "$new_delay" "+%R" | awk -F: '{print $1, $2}')"
       sed -Ei "/Hour/{n;s/[0-9]+/${hour##0}/g}" "$PLIST_FILE"
       sed -Ei "/Minute/{n;s/[0-9]+/${minute##0}/g}" "$PLIST_FILE"
       _verbose "Updating a timer that already existed"
@@ -305,13 +311,13 @@ _set_ownership() {
 
 # veracrypt helper function
 # $@: all veracrypt commands from VERA_MOUNT_OPTS or VERA_CREATE_OPTS
+# shellcheck disable=SC2086
 _vera() {
   local ret
-  local cmd="$@"
-  $VERA $TRUECRYPT $cmd $FORCE
+  $VERA $TRUECRYPT "$@" $FORCE
   ret=$?
 
-  [[ $ret == 0 ]] || _die "Unable to $cmd the password store"
+  [[ $ret -eq 0 ]] || _die "Unable to $* the password store"
 }
 
 # add recipients to gpg encryption
@@ -328,10 +334,13 @@ _gen_key_recipients() {
 
 # gerate the gpg key
 _gpg_key() {
+  local tmp_gpg_key="${TMPDIR:-/tmp}/${RANDOM}${RANDOM}"
   _gen_key_recipients
   [[ ! -f $VERA_KEY || $OVERWRITE_KEY -eq 1 ]] && ${EDITOR:-vim} "$VERA_KEY"
   [[ -f $VERA_KEY ]] || _die "No phrase was entered"
-  cat "$VERA_KEY" | $GPG -o "$VERA_KEY" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e || _die "Could not encrypt phrase"
+
+  $GPG -o "$tmp_gpg_key" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e "$VERA_KEY" &&
+    mv -fT "$tmp_gpg_key" "$VERA_KEY" || _die "Could not encrypt phrase"
 }
 
 # generate the temporary key (never accessible again)
@@ -341,8 +350,8 @@ _tmp_key() {
   tmp_vera="$(mktemp -u "$SECURE_TMPDIR/XXXXXXXXXXXXXXXXXXXX").txt"
   ${EDITOR:-vim} "$tmp_vera"
   [[ -f $tmp_vera ]] || _die "No phrase was entered"
-  # encrypt key as well to make sure it would never come back
-  cat "$tmp_vera" | $GPG -o "$tmp_vera" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e || _die "Could not encrypt phrase"
+  # encrypt key & overwrite it so it can never be decrypted
+  $GPG -o "$tmp_vera" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e || _die "Could not encrypt phrase"
 }
 
 # generate the key that deletes itself but is reusable
@@ -358,16 +367,13 @@ _invisi_key() {
 _create_key() {
   if [[ $MAKE_VERAKEY -eq 1 ]]; then
     _vera --text --create-keyfile "$VERA_KEY" --random-source=/dev/urandom
-    _test_figlet "Verakey created" || _test_toilet "Verakey created" || _success "Verakey created"
+    _fancy_output "Verakey created"
   elif [[ $TMP_KEY -eq 1 ]]; then
-    _tmp_key
-    _test_figlet "Temp key created" || _test_toilet "Temp key created" || _success "Temp key created"
+    _tmp_key && _fancy_output "Temp key created"
   elif [[ $INVISI_KEY -eq 1 ]]; then
-    _invisi_key
-    _test_figlet "$GREEN" "Invisible key created" || _test_toilet "Invisible key created" || _success "Invisible key created"
+    _invisi_key && _fancy_output "Invisible key created"
   else
-    _gpg_key
-    _test_figlet "$GREEN" "GPG key created" || _test_toilet "GPG key created" ||  _success "GPG key created"
+    _gpg_key && _fancy_output "GPG key created"
   fi
 }
 
@@ -393,6 +399,7 @@ _check_key() {
 # $1: subfolder path to mount veracrypt to
 cmd_open() {
 	local path="$1"; shift;
+  local tmp_gpg_key="${TMPDIR:-/tmp}/${RANDOM}${RANDOM}"
 
 	# precautions
 	check_sneaky_paths "$path" "$VERA_FILE" "$VERA_KEY"
@@ -403,10 +410,12 @@ cmd_open() {
 	# open the password vera
   _status
   if [[ $? -ne 0 ]]; then
-    _verbose "Opening the password vera $VERA_FILE using the key $VERA_KEY"
-
-    [[ $INVISI_KEY -eq 1 ]] &&
+    if [[ $INVISI_KEY -eq 1 ]]; then
       _invisi_key && VERA_MOUNT_OPTS[2]=$invisi_vera
+      _verbose "Opening the password vera ${CYAN}$VERA_FILE${RESET} using the key ${CYAN}$invisi_vera${RESET}"
+    else
+      _verbose "Opening the password vera ${CYAN}$VERA_FILE${RESET} using the key ${CYAN}$VERA_KEY${RESET}"
+    fi
 
     # if key is encrypted, decrypt it
     _check_gpg_mime &&
@@ -416,7 +425,8 @@ cmd_open() {
 
     # if key is decrypted, encrypt it
     _check_decrypted_mime &&
-      cat "$VERA_KEY" | $GPG -o "$VERA_KEY" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e
+      $GPG -o "$tmp_gpg_key" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e "$VERA_KEY" &&
+      mv -fT "$tmp_gpg_key" "$VERA_KEY"
 
     _set_ownership "${PREFIX}/${path}"
   else
@@ -424,7 +434,7 @@ cmd_open() {
   fi
 
 	# read, initialize and start the timer
-	local timed=1
+	local -i timed=1
   if [[ -z "$TIMER" ]]; then
     [[ -r "$TIMER_FILE" ]] && rm -f "$TIMER_FILE"
   else
@@ -434,19 +444,19 @@ cmd_open() {
 	# command executed as planned
 	_success "Your password vera has been opened in ${PREFIX}/${path}."
 	_message "You can now use pass as usual."
-	if [[ $timed == 0 ]]; then
+	if [[ $timed -eq 0 ]]; then
     # if the addition to original time is under an hour
     if rg --color=never -q "^0" "$TIMER_FILE"; then
       TIMER=$(awk '{print $3,$4}' "$TIMER_FILE")
       _verbose "Updating timer that is under an hour"
     # if the addition to original time is above an hour
-    elif [[ $(awk '{print NF}' "$TIMER_FILE") == 4 ]]; then
+    elif [[ $(awk '{print NF}' "$TIMER_FILE") -eq 4 ]]; then
       TIMER="$TIMER_FILE"
       _verbose "Updating timer that is above an hour"
     fi
     _message "This password store will be closed in: ${RED}${TIMER}${RESET}"
 	else
-		_message "When finished, close the password vera using 'pass close'."
+		_message "When finished, close the password vera using '${BLUE}pass close${RESET}'."
 	fi
 	return 0
 }
@@ -454,8 +464,8 @@ cmd_open() {
 # close a password vera
 # $1: file in which veracrypt is associated with that will be closed
 cmd_close() {
-	local _vera_name _vera_file="$1"
-  local uid="$(id -u $USER)"
+	local _vera_name _vera_file="$1" uid
+  uid="$(id -u "$USER")"
 
 	[[ -z "$_vera_file" ]] && _vera_file="$VERA_FILE"
 
@@ -484,11 +494,8 @@ cmd_vera() {
   # if status is passed, return only that (has to be above rest)
   if [[ $STATUS -eq 1 ]]; then
     _status
-    if [[ $? -eq 0 ]]; then
-      ( _test_figlet "$GREEN" "open" || _test_toilet "open" || _success "pass vera is mounted" ) && exit 1
-    else
-      ( _test_figlet "$RED" "closed" || _test_toilet "closed" || _warning "pass vera is not mounted" ) && exit 1
-    fi
+    [[ $? -eq 0 ]] && _fancy_output "password-vera is open" || _fancy_output "password-vera is closed"
+    exit 1
   fi
 
   local path="$1"; shift;
@@ -506,15 +513,13 @@ cmd_vera() {
 	check_sneaky_paths "$path" "$VERA_FILE" "$VERA_KEY"
 	if ! is_valid_recipients "${RECIPIENTS[@]}"; then
 		_die "You set an invalid GPG ID."
-	elif [[ -e "$VERA_KEY" ]]; then
-    _check_key
 	elif [[ -e "$VERA_FILE" ]]; then
 		_die "The password vera $VERA_FILE already exists. It won't be overwritten."
 	elif [[ "$VERA_SIZE" -lt 10 ]]; then
 		_die "A password vera cannot be smaller than 10 MB."
-  elif [[ ! -e "$VERA_KEY" ]]; then
-    _check_key
 	fi
+
+  _check_key
 
   [[ -n "$path" ]] &&
     VERA_MOUNT_OPTS=("${VERA_MOUNT_OPTS[@]/${PREFIX}/${PREFIX}/${path}}") &&
@@ -533,9 +538,10 @@ cmd_vera() {
     if [[ -e "${PREFIX}/${path}" ]]; then
       [[ $(du -sh "${PREFIX}/${path}" | cut -f1 | tr -d '[:upper:]') -lt $VERA_SIZE ]] || _die "${PREFIX}/${path} is ${RED}larger${RESET} than $VERA_SIZE"
       local tmp_dir="${PREFIX%/*}/tmp"
-      mkdir -pv "$tmp_dir"
+      mkdir -p "$tmp_dir"
+      printf "  %b\n\t\t%b%s%b\n" "${CYAN}Automatically transferring password store:${RESET}" "${RED}[ ${RESET}${GREEN}" "${PREFIX}/${path}" "${RESET}${RED} ]${RESET}"
       find "${PREFIX}/${path}" -mindepth 1 -maxdepth 1 ! -name '.gpg-id' -exec mv -t "$tmp_dir" '{}' +
-      rm -rf "${PREFIX}/${path}"
+      rm -rf "${PREFIX:?}/${path}"
       DIFM=2
     else
       _warning "${PREFIX}/${path} does not exist, continuing anyway"
@@ -546,7 +552,7 @@ cmd_vera() {
   _check_gpg_mime &&
     $GPG -o "$VERA_KEY" "${GPG_OPTS[@]}" -d "$VERA_KEY"
 
-  # if invisi key was passed, create vera with invisi_vera
+  # if invisi key or tmp key was passed, create vera with that key type
   for f in $invisi_vera $tmp_vera; do
     [[ -e "$f" ]] &&
     for i in "${!VERA_CREATE_OPTS[@]}"; do
@@ -555,19 +561,6 @@ cmd_vera() {
       fi
     done
   done
-  # [[ -e "$invisi_vera" ]] &&
-  #   for i in "${!VERA_CREATE_OPTS[@]}"; do
-  #     if [[ "${VERA_CREATE_OPTS[$i]}" = "--keyfiles" ]]; then
-  #       VERA_CREATE_OPTS[(($i + 1))]=$invisi_vera
-  #     fi
-  #   done
-
-  # [[ -e "$tmp_vera" ]] &&
-  #   for i in "${!VERA_CREATE_OPTS[@]}"; do
-  #     if [[ "${VERA_CREATE_OPTS[$i]}" = "--keyfiles" ]]; then
-  #       VERA_CREATE_OPTS[(($i + 1))]=$tmp_vera
-  #     fi
-  #   done
 
   _vera "${VERA_CREATE_OPTS[@]}"
 
@@ -575,13 +568,15 @@ cmd_vera() {
   [[ -e "$invisi_vera" ]] && VERA_MOUNT_OPTS[2]=$invisi_vera
   [[ -e "$tmp_vera" ]] && VERA_MOUNT_OPTS[2]=$tmp_vera
 
-  _test_figlet "$MAGENTA" "mounting now" || _test_toilet "mounting now" || printf "%b\n" "${MAGENTA}Mounting now${RESET}"
+  _fancy_output "mounting now"
 
   _vera "${VERA_MOUNT_OPTS[@]}"
 
   # if key is decrypted, encrypt it
+  local tmp_gpg_key="${TMPDIR:-/tmp}/${RANDOM}${RANDOM}"
   _check_decrypted_mime &&
-    cat "$VERA_KEY" | $GPG -o "$VERA_KEY" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e
+    $GPG -o "$tmp_gpg_key" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e "$VERA_KEY" &&
+    mv -fT "$tmp_gpg_key" "$VERA_KEY"
 
   [[ $REENCRYPT -eq 1 ]] && _finish_for_me
 
@@ -605,10 +600,14 @@ cmd_vera() {
 	[[ -z "$TIMER" ]] || timed="$(_timer "$TIMER" "$path")"
 
 	# command executed as planned
-	_success "Your password vera has been created and opened in $PREFIX."
+  _success "Your password vera has been created and opened in ${PREFIX}/${path}."
 	[[ -z "$ret" ]] || _success "$ret"
-	_message "Your vera is: $VERA_FILE"
-	_message "Your vera key is: $VERA_KEY"
+	_message "Your vera is: ${CYAN}${VERA_FILE}${RESET}"
+
+  for f in $invisi_vera $tmp_vera $VERA_KEY; do
+    [[ -e "$f" ]] && _message "Your vera key is: ${CYAN}${f}${RESET}"
+  done
+
 	if [[ -z "$ret" ]]; then
 		_message "You need to initialize the store with 'pass init gpg-id...'."
 	else
@@ -620,12 +619,12 @@ cmd_vera() {
     if rg --color=never -q "^0" "$TIMER_FILE"; then
       TIMER=$(awk '{print $3,$4}' "$TIMER_FILE")
     # if the addition to original time is above an hour
-    elif [[ $(awk '{print NF}' "$TIMER_FILE") == 4 ]]; then
+    elif [[ $(awk '{print NF}' "$TIMER_FILE") -eq 4 ]]; then
       TIMER="$TIMER_FILE"
     fi
     _message "This password store will be closed in: ${RED}${TIMER}${RESET}"
 	else
-		_message "When finished, close the password vera using 'pass close'."
+		_message "When finished, close the password vera using '${BLUE}pass close${RESET}'."
 	fi
 	return 0
 }
