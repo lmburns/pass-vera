@@ -12,6 +12,7 @@ The same GPG key (by default) is used to encrypt passwords and the veracrypt dri
 
 Make a backup of your password-store directory. Do this even if you plan on specifying the `--for-me` argument which will transfer over the pre-existing password-store for you.  Once the vera is created and the passwords are moved into the vera, only then should you delete the backup.
 
+---
 ### Workflow
 
 1. Create a password vera with `pass vera <gpg-id>`. Type anything in the text file that opens (make sure to remember it). Then, one will be prompted for a password to be entered for the veracrypt drive itself (it does not have to be the same as the text file). The "vera", is created and mounted in `PASSWORD_STORE_DIR` (or, if unset, then `~/.password-store`). Finally, the newly created drive will be initialized as a password-store using the same GPG key.
@@ -24,6 +25,7 @@ The text file created in this process is used as a keyfile to the vera. It works
 
 4. To use `pass` again, open the password vera: `pass open`
 
+---
 ### Usage
 
 ```
@@ -67,6 +69,7 @@ More information may be found in the pass-vera(1) man page.
 
 To view more information, `man pass-vera`.
 
+---
 ### Examples
 
 #### Create a new password vera
@@ -129,12 +132,12 @@ zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --timer="1 hour"
 ```
 
 **NOTE [1]:** Timer format must match one of the following:
-    1. "1 hour 5 minutes"
-    2. "1hour 5minutes"
-    3. "1hr 5 minutes"
-    4. "1 hr 5 mins"
-    5. "1hr 5mins"
-    6. 1hr
+
+```
+(1) "1 hour 5 minutes"      (2) "1hour 5minutes"      (3) "1hr 5 minutes"
+
+(4) "1 hr 5 mins"           (3) "1hr 5mins"           (6) 1hr
+```
 
 - An hour is not required when specifying time. Also, if both an hour and minute are specified, place the parameter in quotation marks. The only reason why one would not ever quote the parameter is if something like 1hr is given.
 
@@ -181,6 +184,7 @@ zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --for-me --invisi-key
   .  When finished, close the password vera using 'pass close'.
 ```
 
+---
 ### Environmental Variables
 
 - `PASSWORD_STORE_VERA`: Path to `veracrypt` executable
@@ -188,6 +192,7 @@ zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --for-me --invisi-key
 - `PASSWORD_STORE_VERA_KEY`: Path to the password vera key file by default `~/.password.key.vera`
 - `PASSWORD_STORE_VERA_SIZE`: Password vera size in MB, by default `10`
 
+---
 ### Installation
 
 **Requirements (minimal versions)**:
@@ -215,6 +220,7 @@ cd pass-vera
 make install
 ```
 
+---
 ### Import Existing `password-store`
 
 #### Option 1
@@ -231,6 +237,7 @@ make install
 3. Check to make sure it copied correctly
 4. `rm -rf ~/.password-store-bkp`
 
+---
 ### TODO
 
 - [x] ~~Add a 'do-it-for-me' option~~
