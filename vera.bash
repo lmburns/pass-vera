@@ -45,11 +45,11 @@ VERA_CREATE_OPTS=( "--text" "--volume-type=normal" "--create" "$VERA_FILE" "--si
 # add armor to gpg options
 GPG_OPTS+=( "--armor" )
 
-_message() { [ "$QUIET" = 0 ] && printf '  %b.%b	%s\n' "$BOLD" "$RESET" "$*" >&2; }
-_warning() { [ "$QUIET" = 0 ] && printf '  %bw%b	%b%s%b\n' "${BOLD}${YELLOW}" "$RESET" "$YELLOW" "$*" "$RESET" >&2; }
+_message() { [ "$QUIET" = 0 ] && printf '  %b.%b  %s\n' "$BOLD" "$RESET" "$*" >&2; }
+_warning() { [ "$QUIET" = 0 ] && printf '  %bw%b  %b%s%b\n' "${BOLD}${YELLOW}" "$RESET" "$YELLOW" "$*" "$RESET" >&2; }
 _success() { [ "$QUIET" = 0 ] && printf ' %b(*)%b %b%s%b\n' "${BOLD}${GREEN}" "$RESET" "$GREEN" "$*" "$RESET" >&2; }
-_verbose() { [ "$VERBOSE" = 0 ] || printf '  %b.%b	%bpass%b %s\n' "${BOLD}${MAGENTA}" "$RESET" "$MAGENTA" "$RESET" "$*" >&2; }
-_verbose_vera() { [ "$VERBOSE" = 0 ] || printf '	%b.%b  %s\n' "${BOLD}${MAGENTA}" "$RESET" "$*" >&2; }
+_verbose() { [ "$VERBOSE" = 0 ] || printf '  %b.%b  %bpass%b %s\n' "${BOLD}${MAGENTA}" "$RESET" "$MAGENTA" "$RESET" "$*" >&2; }
+_verbose_vera() { [ "$VERBOSE" = 0 ] || printf '  %b.%b  %s\n' "${BOLD}${MAGENTA}" "$RESET" "$*" >&2; }
 _error() { printf ' %b[x]%b %bError:%b %s\n' "${BOLD}${RED}" "$RESET" "$BOLD" "$RESET" "$*" >&2; }
 _status() { "$VERA" --text --list 2>&1 | rg --color=never -Fq ".password.vera"; }
 _dismount() { _status && "$VERA" --text --dismount "$VERA_FILE"; }
@@ -500,7 +500,7 @@ cmd_vera() {
 
 	local path="$1"; shift;
 	typeset -a RECIPIENTS
-	[[ -z "$*" ]] && _die "${GREEN}$PROGRAM $COMMAND${RESET} [-n] [-t time] [-f] [-p subfolder] [-c] [-k|--tmp-key|-i] [-o] [-s] [-r] [--for-me]	<gpg-id>"
+	[[ -z "$*" ]] && _die "${GREEN}$PROGRAM $COMMAND${RESET} <gpg-id> [-n] [-t time] [-f] [-p subfolder] [-c] [-k|--tmp-key|-i] [-o] [-s] [-r] [--for-me]"
 	IFS=" " read -r -a RECIPIENTS <<< "$@"
 
 	_finish_for_me() {
@@ -515,8 +515,8 @@ cmd_vera() {
 		_die "You set an invalid GPG ID."
 	elif [[ -e "$VERA_FILE" ]]; then
 		_die "The password vera $VERA_FILE already exists. It won't be overwritten."
-	elif [[ "$VERA_SIZE" -lt 10 ]]; then
-		_die "A password vera cannot be smaller than 10 MB."
+	elif [[ "$VERA_SIZE" -lt 15 ]]; then
+		_die "A password vera cannot be smaller than 15 MB."
 	fi
 
 	_check_key
@@ -645,7 +645,7 @@ INVISI_KEY=0
 TMP_KEY=0
 TRUECRYPT=""
 STATUS=0
-DIFM=0
+DIFM=0 # do it for me
 REENCRYPT=0
 
 # program arguments using GNU getopt
@@ -676,6 +676,6 @@ while true; do case $1 in
 	--) shift; break ;;
 esac done
 
-[[ -z "$TIMER" ]] || command -v launchctl &> /dev/null || _die "launchctl is not present."
+[[ -z "$TIMER" ]] || [[ $(uname) == "Darwin" ]] || command -v launchctl &> /dev/null || _die "launchctl is not present"
 [[ $err -ne 0 ]] && cmd_vera_usage && exit 1
 [[ "$COMMAND" == "vera" ]] && cmd_vera "$id_path" "$@"
