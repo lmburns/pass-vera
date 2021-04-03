@@ -43,3 +43,5 @@ git push --set-upstream origin master
 #   REPLACE2=${REPLACE1//CHECKSUM/$checksum}
 #   echo $REPLACE2
 # done < ../../tap_template > Formula/pass-vera.rb
+
+printf "%b\n" "${MAGENTA}Finished updating tap"
