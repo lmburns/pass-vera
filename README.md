@@ -1,6 +1,6 @@
 ## pass vera
 
-A [`pass`](https://www.passwordstore.org/) extension that encrypts the entire password-sotre in an encrypted [`veracrypt`](https://sourceforge.net/projects/veracrypt/) drive.
+A [`pass`](https://www.passwordstore.org/) extension that encrypts the entire password-store in an encrypted [`veracrypt`](https://sourceforge.net/projects/veracrypt/) drive.
 
 ### Description
 
