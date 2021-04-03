@@ -1,7 +1,5 @@
 os: osx
-
 language: bash
-
 sudo: false
 
 addons:
@@ -16,7 +14,3 @@ addons:
       - ripgrep
       - gawk
       - openssl@1.1
-      - shellcheck
-
-script:
-  - shellcheck *.bash

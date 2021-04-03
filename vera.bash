@@ -225,7 +225,7 @@ _timer() {
     <key>ProgramArguments</key>
     <array>
       <string>/bin/sh</string>
-      <string>${EXTENSIONS:-$SYSTEM_EXTENSION_DIR}/vera-resources/veratimer</string>
+      <string>${EXTENSIONS:-$SYSTEM_EXTENSION_DIR}/vera-resources/veratimer.sh</string>
     </array>
     <key>RunAtLoad</key>
       <false/>

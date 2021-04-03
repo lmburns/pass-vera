@@ -24,7 +24,7 @@ install:
 	@install -v -m 0755 open.bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/open.bash"
 	@install -v -m 0755 close.bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/close.bash"
 	@install -v -m 0644 pass-$(PROG).1 "$(DESTDIR)$(MANDIR)/man1/pass-$(PROG).1"
-	@install -v -m 0744 veratimer "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/vera-resources/veratimer"
+	@install -v -m 0744 veratimer.sh "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/vera-resources/veratimer.sh"
 	@install -v -m 0644 "completion/pass-$(PROG).bash" "$(DESTDIR)$(BASHCOMPDIR)/pass-$(PROG)"
 	@install -v -m 0644 "completion/pass-$(PROG).zsh" "$(DESTDIR)$(ZSHCOMPDIR)/_pass-$(PROG)"
 	@install -v -m 0644 "completion/pass-open.zsh" "$(DESTDIR)$(ZSHCOMPDIR)/_pass-open"
