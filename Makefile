@@ -14,7 +14,7 @@ all:
 	@echo "To install it try \"make install\" instead."
 	@echo
 	@echo "To run pass $(PROG) one needs to have some tools installed on the system:"
-	@echo "     Tomb and password store"
+	@echo "     VeraCrypt, pass, and ripgrep"
 
 install:
 	@install -v -d "$(DESTDIR)$(MANDIR)/man1"
@@ -46,24 +46,8 @@ uninstall:
 		"$(DESTDIR)$(ZSHCOMPDIR)/_pass-close"
 
 
-COVERAGE ?= true
-TMP ?= /tmp/pass-tomb
-PASS_TEST_OPTS ?= --verbose --immediate --chain-lint --root=/tmp/sharness
-T = $(sort $(wildcard tests/*.sh))
-export COVERAGE TMP
-
-tests: $(T)
-	@tests/results
-
-$(T):
-	@$@ $(PASS_TEST_OPTS)
-
-
 lint:
-	shellcheck -s bash $(PROG).bash open.bash close.bash tests/commons tests/results
+	shellcheck -s bash $(PROG).bash open.bash close.bash
+	shellcheck -s sh $(PROG)timer.sh
 
-clean:
-	@rm -vrf tests/test-results/ tests/gnupg/random_seed
-
-
-.PHONY: install uninstall tests $(T) lint clean
+.PHONY: install uninstall lint
