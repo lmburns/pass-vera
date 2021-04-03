@@ -17,22 +17,23 @@
 
 # shellcheck disable=SC2015,SC2181
 
-readonly VERSION="1.0"
+typeset -r VERSION="1.0"
 
-readonly RED=$(tput setaf 1) GREEN=$(tput setaf 2) YELLOW=$(tput setaf 3)
-readonly BLUE=$(tput setaf 4) MAGENTA=$(tput setaf 5) CYAN=$(tput setaf 6)
-readonly BOLD=$(tput bold) RESET=$(tput sgr0)
+typeset -r RED=$(tput setaf 1) GREEN=$(tput setaf 2) YELLOW=$(tput setaf 3)
+typeset -r BLUE=$(tput setaf 4) MAGENTA=$(tput setaf 5) CYAN=$(tput setaf 6)
+typeset -r BOLD=$(tput bold) RESET=$(tput sgr0)
 
-# environmental variables that can be set
-readonly VERA="${PASSWORD_STORE_VERA:-veracrypt}"
-readonly VERA_FILE="${PASSWORD_STORE_VERA_FILE:-$HOME/.password.vera}"
-readonly VERA_KEY="${PASSWORD_STORE_VERA_KEY:-$HOME/.password.vera.key}"
-readonly VERA_SIZE="${PASSWORD_STORE_VERA_SIZE:-15}"
+# environmental variables
+typeset -r VERA="${PASSWORD_STORE_VERA:-veracrypt}"
+typeset -r VERA_FILE="${PASSWORD_STORE_VERA_FILE:-$HOME/.password.vera}"
+typeset -r VERA_KEY="${PASSWORD_STORE_VERA_KEY:-$HOME/.password.vera.key}"
+typeset -r VERA_SIZE="${PASSWORD_STORE_VERA_SIZE:-15}"
 
 # important paths used throughout
-readonly TMP_PATH="/tmp/pass-close${VERA_FILE##*/}.plist"
-readonly PLIST_FILE="${HOME}/Library/LaunchAgents/${TMP_PATH##*/}"
-readonly TIMER_FILE="${PREFIX}/${path}/.timer"
+typeset -r TMP_PATH="/tmp/pass-close${VERA_FILE##*/}.plist"
+typeset -r PLIST_FILE="${HOME}/Library/LaunchAgents/${TMP_PATH##*/}"
+typeset -r PlistBuddy="/usr/libexec/PlistBuddy"
+typeset -r TIMER_FILE="${PREFIX}/${path}/.timer"
 
 typeset -a VERA_MOUNT_OPTS VERA_CREATE_OPTS
 
@@ -72,6 +73,7 @@ _check_vera_mime() { file -Ib "$VERA_KEY" | rg --color=never -q 'octet-stream'; 
 _dependency_check() {
 	command -v "$VERA" &> /dev/null || _die "veracrypt is not present in your \$PATH"
 	command -v rg &> /dev/null || _die "ripgrep is not present \$PATH"
+	[[ $(uname) == "Darwin" && -x "/usr/libexec/PlistBuddy" ]] || _die "pass-vera only supports macOS right now"
 }
 
 cmd_vera_version() {
@@ -126,7 +128,7 @@ _EOF
 # ==========================================================================================
 
 # launchctl helper functions
-_agent_status() { launchctl list | rg -Fq --color=never "${PLIST_FILE##*/}"; }
+_agent_status() { launchctl list | rg -Fq --color=never "pass-close${VERA_FILE##*/}"; }
 _launch() { launchctl "$1" "gui/${uid}" "$PLIST_FILE"; }
 
 # check if email given is associated with a trusted key
@@ -199,61 +201,36 @@ _timer() {
 
 	[[ -n "$path" ]] && TIMER_FILE="${TIMER_FILE%/*}/${path}/.timer"
 
-	local launch_debug=""
+	$PlistBuddy -c "Clear dict" "$TMP_PATH" 2>&1 >/dev/null
+	$PlistBuddy -c "Add :Label string pass-close${VERA_FILE##*/}" "$TMP_PATH" 2>&1 >/dev/null
+	$PlistBuddy -c "Add :ServiceDescription string Close pass-vera" "$TMP_PATH"
+	$PlistBuddy -c "Add :EnvironmentalVariables dict" "$TMP_PATH"
+	$PlistBuddy -c "Add :EnvironmentalVariables:PATH string /usr/local/bin:${EXTENSIONS:-$SYSTEM_EXTENSION_DIR}:/usr/local/bin:$(dirname "$(command -v veracrypt)")" "$TMP_PATH"
+	$PlistBuddy -c "Add :Program string ${EXTENSIONS:-$SYSTEM_EXTENSION_DIR}/vera-resources/veratimer.sh" "$TMP_PATH"
+	$PlistBuddy -c "Add :RunAtLoad bool false" "$TMP_PATH"
+	$PlistBuddy -c "Add :StartCalendarInterval dict" "$TMP_PATH"
+	$PlistBuddy -c "Add :StartCalendarInterval:Hour integer $delay_hour" "$TMP_PATH"
+	$PlistBuddy -c "Add :StartCalendarInterval:Minute integer $delay_minute" "$TMP_PATH"
+	$PlistBuddy -c "Add :UserName string $USER" "$TMP_PATH"
+	$PlistBuddy -c "Add :Umask integer 23" "$TMP_PATH"
+
 	if [[ $DEBUG -eq 1 ]]; then
-		launch_debug="<key>StandardErrorPath</key>
-			<string>$HOME/pass-vera-stderr.log</string>
-		<key>StandardOutPath</key>
-			<string>$HOME/pass-vera-stdout.log</string>"
-		_verbose "Debugging launchctl with stdout/stderr files"
+		$PlistBuddy -c "Add :StandardOutPath string $HOME/pass-vera-stdout.log" "$TMP_PATH"
+		$PlistBuddy -c "Add :StandardErrorPath string $HOME/pass-vera-sterr.log" "$TMP_PATH"
 	fi
 
-	cat > "$TMP_PATH" <<-_EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-  <dict>
-    <key>Label</key>
-    <string>${TMP_PATH##*/}</string>
-    <key>ServiceDescription</key>
-    <string>Close pass-vera</string>
-    <key>EnvironmentalVariables</key>
-    <dict>
-      <key>PATH</key>
-      <string>/usr/local/bin:${EXTENSIONS:-$SYSTEM_EXTENSION_DIR}:/usr/local/bin:$(dirname "$(command -v veracrypt)")</string>
-    </dict>
-    <key>ProgramArguments</key>
-    <array>
-      <string>/bin/sh</string>
-      <string>${EXTENSIONS:-$SYSTEM_EXTENSION_DIR}/vera-resources/veratimer.sh</string>
-      </array>
-    <key>RunAtLoad</key>
-      <false/>
-    <key>StartCalendarInterval</key>
-    <dict>
-      <key>Hour</key>
-      <integer>$delay_hour</integer>
-      <key>Minute</key>
-      <integer>$delay_minute</integer>
-    </dict>
-    <key>UserName</key>
-      <string>$USER</string>
-    <key>Umask</key>
-      <integer>23</integer>
-    $launch_debug
-  </dict>
-</plist>
-_EOF
-
 	local ret=$? hour_check min_check digit_check
-	hour_check="$(rg -A1 -N --color=never 'Hour' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
-	min_check="$(rg -A1 -N --color=never 'Minute' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
+	hour_check="$($PlistBuddy -c "Print :StartCalendarInterval:Hour" "$TMP_PATH")"
+	min_check="$($PlistBuddy -c "Print :StartCalendarInterval:Minute" "$TMP_PATH")"
+	# hour_check="$(rg -A1 -N --color=never 'Hour' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
+	# min_check="$(rg -A1 -N --color=never 'Minute' "$TMP_PATH" | sed -n '2p' | awk 'BEGIN{FPAT="[0-9]+"} {print $1}')"
 	digit_check="^[0-9]*$"
 
 	if [[ $ret -eq 0 ]]; then
-		[[ ! "${hour_check}" =~ ${digit_check} ]] && _error "Incorrectly entered hour" && exit 1
-		[[ ! "${min_check}" =~ ${digit_check} ]] && _error "Incorrectly entered minute" && exit 1
+		[[ ! "${hour_check}" =~ ${digit_check} ]] && _die "Incorrectly entered hour. Enter correct format or don't use timer"
+		[[ ! "${min_check}" =~ ${digit_check} ]] && _die "Incorrectly entered minute. Enter correct format or don't use timer"
 		if [[ -r "$TIMER_FILE" ]]; then
+      [[ $(plutil "$TMP_PATH" | cut -d' ' -f2) == "OK" ]] || _die "File is not a plist"
 			[[ ! -e "$PLIST_FILE" ]] && mv "$TMP_PATH" "$PLIST_FILE"
 			# process of updating the already existing timer
 			local delay_original delay_file_mod new_delay now now_delay
@@ -676,6 +653,6 @@ while true; do case $1 in
 	--) shift; break ;;
 esac done
 
-[[ -z "$TIMER" ]] || [[ $(uname) == "Darwin" ]] || command -v launchctl &> /dev/null || _die "launchctl is not present"
+[[ -z "$TIMER" ]] || command -v launchctl &> /dev/null || _die "launchctl is not present"
 [[ $err -ne 0 ]] && cmd_vera_usage && exit 1
 [[ "$COMMAND" == "vera" ]] && cmd_vera "$id_path" "$@"
