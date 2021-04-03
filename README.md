@@ -128,6 +128,19 @@ zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --timer="1 hour"
   .  This password-store will be closed in: 1 hour
 ```
 
+**NOTE [1]:** Timer format must match one of the following:
+    1. "1 hour 5 minutes"
+    2. "1hour 5minutes"
+    3. "1hr 5 minutes"
+    4. "1 hr 5 mins"
+    5. "1hr 5mins"
+    6. 1hr
+
+- An hour is not required when specifying time. Also, if both an hour and minute are specified, place the parameter in quotation marks. The only reason why one would not ever quote the parameter is if something like 1hr is given.
+
+**NOTE [2]:** The `launchctl` agent is rounded to the nearest minute and may not close in the exact amount of specified  time.  For  example,  the  time  is `10:02:20` and a `1 minute` timer is given, the `launchctl` agent will run in `40 seconds`.
+
+
 #### Open a password vera, set a timer, and add additional time after 5 minutes have passed
 
 ```
@@ -146,7 +159,7 @@ zx2c4@laptop ~ $ pass open --timer="10 minutes"
   .  This password-store will be closed in: 15 minutes
 ```
 
-#### Create a password vera using an 'invisible key' & copy an existing password-store (`PASSWORD_STORE_DIR`)
+#### Create a password vera using an 'invisible key' & copy an existing password-store (`$PASSWORD_STORE_DIR`)
 
 ```
 zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --for-me --invisi-key
@@ -180,7 +193,21 @@ zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --for-me --invisi-key
 **Requirements (minimal versions)**:
     - `pass 1.7.3`
     - `veracrypt 1.24-Update8`
+        - `osxfuse` is a requirement for `veracrypt`
     - `launchd 7.0.0`
+
+#### Homebrew
+
+```sh
+brew tap lmburns/pass-vera
+brew install pass-vera
+
+# or
+
+brew install lmburns/pass-vera
+```
+
+#### Manual
 
 ```sh
 git clone https://github.com/lmburns/pass-vera
@@ -207,7 +234,7 @@ make install
 ### TODO
 
 - [x] ~~Add a 'do-it-for-me' option~~
-- [ ] Create a homebrew package
+- [x] ~~Create a homebrew package~~
 - [ ] Add configuration file for veracrypt
 - [ ] Add option to create inner drive
 
@@ -217,8 +244,8 @@ Any and all is welcomed.
 
 ### Inspiration, Miscellaneous
 
-- This is heavily based off of [`pass-tomb`](https://github.com/roddhjav/pass-tomb). It was designed to work with macOS, since macOS doesn't support [dm-crypt](https://wiki.archlinux.org/index.php/dm-crypt) encryption. `pass-vera` uses `launchctl` instead of `systemd` to create the timer that will automatically close/dismount the password-store.
-- [`MacTomb`](https://github.com/davinerd/MacTomb/blob/master/README.md) is also available, which creates an encrypted DMG and stores files (built for applications) within it. It would be interesting to fork this project and create the same thing that I have created.
+- This is heavily based off of [`pass-tomb`](https://github.com/roddhjav/pass-tomb). Some pieces of code were taken from it and it provided an outline for me to do this project. This `README` is also structured in a very similar way. `pass-vera` was designed to work with macOS, since macOS doesn't support [dm-crypt](https://wiki.archlinux.org/index.php/dm-crypt) encryption, which is what `pass-tomb` uses. `pass-vera` also uses `launchctl` instead of `systemd` to create the timer that will automatically close/dismount the password-store.
+- [`MacTomb`](https://github.com/davinerd/MacTomb/blob/master/README.md) is available, which creates an encrypted DMG and stores files (built for applications) within it. It would be interesting to fork this project and create the same thing that I have created.
 
 ### License
 
