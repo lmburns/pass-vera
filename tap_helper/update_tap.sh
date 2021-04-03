@@ -8,7 +8,7 @@ RESET=$(tput sgr0) RED=$(tput setaf 1)
 cd "$(dirname "$(realpath -s "$0")")"
 printf "%b\n" "${MAGENTA}$(pwd)${RESET}"
 
-tag="$(git describe --tags "$(git rev-list --tags --max-count=1)")"
+tag="$(git describe --abbrev=0 --tags)"
 outfile="taps/pass-vera-${tag}.tar.gz"
 
 mkdir -pv "${outfile%/*}"
