@@ -164,6 +164,8 @@ zx2c4@laptop ~ $ pass open --timer="10 minutes"
 
 #### Create a password vera using an 'invisible key' & copy an existing password-store (`$PASSWORD_STORE_DIR`)
 
+The `--invisi-key` or `-i` option will create a key inside of a directory that will automatically shred itself once the vera is mounted. The difference between the invisible key and the temporary key is that the invisible key can be used again, even though it is not the same file that is going to be used. VeraCrypt works in such a way that a key is considered to be the same if it has the same filename and same contents (regardless of the directory). Therefore, after using this option, the key will not be in the user's home directory, and whenever they go to open the vera after closing it, `pass open --invisi-key` must be used in order for the vera to mount, and this will work the same as if the key had never been deleted.
+
 ```
 zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --for-me --invisi-key
  (*) Invisible key created
