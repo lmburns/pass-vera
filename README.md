@@ -198,10 +198,10 @@ zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --for-me --invisi-key
 ### Installation
 
 **Requirements (minimal versions)**:
-    - `pass 1.7.3`
-    - `veracrypt 1.24-Update8`
-        - `osxfuse` is a requirement for `veracrypt`
-    - `launchd 7.0.0`
+- `pass 1.7.3`
+- `veracrypt 1.24-Update8`
+    - `osxfuse` is a requirement for `veracrypt`
+- `launchd 7.0.0`
 
 #### Homebrew
 
