@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # pass vera - Password Store Extension (https://www.passwordstore.org/)
-# Copyright (C) 2021
+# Copyright (C) 2021 Lucas Burns
 #
-#		 This program is free software: you can redistribute it and/or modify
-#		 it under the terms of the GNU General Public License as published by
-#		 the Free Software Foundation, either version 3 of the License, or
-#		 (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#		 This program is distributed in the hope that it will be useful,
-#		 but WITHOUT ANY WARRANTY; without even the implied warranty of
-#		 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#		 GNU General Public License for more details.
-#
-#		 You should have received a copy of the GNU General Public License
-#		 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # shellcheck disable=SC2015,SC2181
 
@@ -112,7 +112,7 @@ cmd_vera_usage() {
 	    ${BLUE}-s${RESET}, ${BLUE}--status${RESET}         Show status of pass vera (open or closed)
 	    ${BLUE}-q${RESET}, ${BLUE}--quiet${RESET}          Be quiet
 	    ${BLUE}-v${RESET}, ${BLUE}--verbose${RESET}        Be verbose
-	    ${BLUE}-d${RESET}, ${BLUE}--debug${RESET}          Debug the launchctl agent with a stderr file located in \$HOME folder
+	    ${BLUE}-d${RESET}, ${BLUE}--debug${RESET}          Debug the launchd agent with a stderr file located in \$HOME folder
 	        ${BLUE}--unsafe${RESET}         Speed up vera creation (for testing only)
 	    ${BLUE}-V${RESET}, ${BLUE}--version${RESET}        Show version information.
 	    ${BLUE}-h${RESET}, ${BLUE}--help${RESET}           Print this help message and exit.

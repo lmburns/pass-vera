@@ -5,6 +5,7 @@ LIBDIR ?= $(PREFIX)/lib
 SYSTEM_EXTENSION_DIR ?= $(LIBDIR)/password-store/extensions
 MANDIR ?= $(PREFIX)/share/man
 
+REPODIR ?= pass-scripts
 BASHCOMPDIR ?= $(PREFIX)/etc/bash_completion.d
 ZSHCOMPDIR ?= $(PREFIX)/share/zsh/site-functions
 
@@ -20,11 +21,11 @@ install:
 	@install -v -d "$(DESTDIR)$(MANDIR)/man1"
 	@install -v -d "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/" "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/vera-resources/"
 	@install -v -d "$(DESTDIR)$(BASHCOMPDIR)" "$(DESTDIR)$(ZSHCOMPDIR)"
-	@install -v -m 0755 $(PROG).bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/$(PROG).bash"
-	@install -v -m 0755 open.bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/open.bash"
-	@install -v -m 0755 close.bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/close.bash"
+	@install -v -m 0755 $(REPODIR)/$(PROG).bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/$(PROG).bash"
+	@install -v -m 0755 $(REPODIR)/open.bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/open.bash"
+	@install -v -m 0755 $(REPODIR)/close.bash "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/close.bash"
+	@install -v -m 0744 $(REPODIR)/veratimer.sh "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/vera-resources/veratimer.sh"
 	@install -v -m 0644 pass-$(PROG).1 "$(DESTDIR)$(MANDIR)/man1/pass-$(PROG).1"
-	@install -v -m 0744 veratimer.sh "$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/vera-resources/veratimer.sh"
 	@install -v -m 0644 "completion/pass-$(PROG).bash" "$(DESTDIR)$(BASHCOMPDIR)/pass-$(PROG)"
 	@install -v -m 0644 "completion/pass-$(PROG).zsh" "$(DESTDIR)$(ZSHCOMPDIR)/_pass-$(PROG)"
 	@install -v -m 0644 "completion/pass-open.zsh" "$(DESTDIR)$(ZSHCOMPDIR)/_pass-open"
@@ -47,7 +48,7 @@ uninstall:
 
 
 lint:
-	shellcheck -s bash $(PROG).bash open.bash close.bash
-	shellcheck -s sh $(PROG)timer.sh
+	shellcheck -s bash $(REPODIR)/$(PROG).bash $(REPODIR)/open.bash $(REPODIR)/close.bash
+	shellcheck -s sh $(REPODIR)/$(PROG)timer.sh
 
 .PHONY: install uninstall lint

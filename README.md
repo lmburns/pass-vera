@@ -59,7 +59,7 @@ pass vera 1.0 - A pass extension that adds another layer of encryption
     -s, --status         Show status of pass vera (open or closed)
     -q, --quiet          Be quiet
     -v, --verbose        Be verbose
-    -d, --debug          Debug the launchctl agent with a stderr file located in $HOME folder
+    -d, --debug          Debug the launchd agent with a stderr file located in $HOME folder
         --unsafe         Speed up vera creation (for testing only)
     -V, --version        Show version information.
     -h, --help           Print this help message and exit.
@@ -141,7 +141,7 @@ zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --timer="1 hour"
 
 - An hour is not required when specifying time. Also, if both an hour and minute are specified, place the parameter in quotation marks. The only reason why one would not ever quote the parameter is if something like 1hr is given.
 
-**NOTE [2]:** The `launchctl` agent is rounded to the nearest minute and may not close in the exact amount of specified  time.  For  example,  the  time  is `10:02:20` and a `1 minute` timer is given, the `launchctl` agent will run in `40 seconds`.
+**NOTE [2]:** The `launchd` agent is rounded to the nearest minute and may not close in the exact amount of specified  time.  For  example,  the  time  is `10:02:20` and a `1 minute` timer is given, the `launchd` agent will run in `40 seconds`.
 
 
 #### Open a password vera, set a timer, and add additional time after 5 minutes have passed
@@ -203,6 +203,12 @@ zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --for-me --invisi-key
     - `osxfuse` is a requirement for `veracrypt`
 - `launchd 7.0.0`
 
+To make `veracrypt` an executable on the command line, do the following:
+
+```
+ln -sv /Applications/VeraCrypt.app/Contents/MacOS/VeraCrypt /usr/local/bin/veracrypt
+```
+
 #### Homebrew
 
 ```sh
@@ -253,7 +259,7 @@ Any and all is welcomed.
 
 ### Inspiration, Miscellaneous
 
-- This is heavily based off of [`pass-tomb`](https://github.com/roddhjav/pass-tomb). Some pieces of code were taken from it and it provided an outline for me to do this project. This `README` is also structured in a very similar way. `pass-vera` was designed to work with macOS, since macOS doesn't support [dm-crypt](https://wiki.archlinux.org/index.php/dm-crypt) encryption, which is what `pass-tomb` uses. `pass-vera` also uses `launchctl` instead of `systemd` to create the timer that will automatically close/dismount the password-store.
+- This is heavily based off of [`pass-tomb`](https://github.com/roddhjav/pass-tomb). Some pieces of code were taken from it and it provided an outline for me to do this project. This `README` is also structured in a very similar way. `pass-vera` was designed to work with macOS, since macOS doesn't support [dm-crypt](https://wiki.archlinux.org/index.php/dm-crypt) encryption, which is what `pass-tomb` uses. `pass-vera` also uses `launchd` instead of `systemd` to create the timer that will automatically close/dismount the password-store.
 - [`MacTomb`](https://github.com/davinerd/MacTomb/blob/master/README.md) is available, which creates an encrypted DMG and stores files (built for applications) within it. It would be interesting to fork this project and create the same thing that I have created.
 
 ### License
