@@ -39,7 +39,7 @@ uninstall:
 		"$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/open.bash" \
 		"$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/close.bash" \
 		"$(DESTDIR)$(MANDIR)/man1/pass-$(PROG).1" \
-		"$(DESTDIR)$(LIBDIR)/systemd/system/pass-close@.service" \
+		"$(DESTDIR)$(SYSTEM_EXTENSION_DIR)/vera-resources" \
 		"$(DESTDIR)$(BASHCOMPDIR)/pass-$(PROG)" \
 		"$(DESTDIR)$(ZSHCOMPDIR)/_pass-$(PROG)" \
 		"$(DESTDIR)$(ZSHCOMPDIR)/_pass-open" \
