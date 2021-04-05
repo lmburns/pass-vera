@@ -57,6 +57,7 @@ pass vera 1.0 - A pass extension that adds another layer of encryption
     -r, --reencrypt      Reencrypt passwords when creating to new vera (use with --for-me)
     -f, --force          Force operation (i.e. even if mounted volume is active)
     -s, --status         Show status of pass vera (open or closed)
+    -u, --usage          Show the space used and space available on the container
     -q, --quiet          Be quiet
     -v, --verbose        Be verbose
     -d, --debug          Debug the launchd agent with a stderr file located in $HOME folder
@@ -68,6 +69,7 @@ More information may be found in the pass-vera(1) man page.
 ```
 
 To view more information, `man pass-vera`.
+There is also a markdown version of the man page in this directory (`pass-vera.md`).
 
 ---
 ### Examples

@@ -112,6 +112,7 @@ cmd_vera_usage() {
 	    ${BLUE}-r${RESET}, ${BLUE}--reencrypt${RESET}      Reencrypt passwords when creating to new vera (use with --for-me)
 	    ${BLUE}-f${RESET}, ${BLUE}--force${RESET}          Force operation (i.e. even if mounted volume is active)
 	    ${BLUE}-s${RESET}, ${BLUE}--status${RESET}         Show status of pass vera (open or closed)
+	    ${BLUE}-u${RESET}, ${BLUE}--usage${RESET}          Show space available and space used on the container
 	    ${BLUE}-q${RESET}, ${BLUE}--quiet${RESET}          Be quiet
 	    ${BLUE}-v${RESET}, ${BLUE}--verbose${RESET}        Be verbose
 	    ${BLUE}-d${RESET}, ${BLUE}--debug${RESET}          Debug the launchd agent with a stderr file located in \$HOME folder
@@ -201,8 +202,8 @@ _timer() {
 
 	[[ -n "$path" ]] && TIMER_FILE="${TIMER_FILE%/*}/${path}/.timer"
 
-	$PlistBuddy -c "Clear dict" "$TMP_PATH" 2>&1 >/dev/null
-	$PlistBuddy -c "Add :Label string pass-close${VERA_FILE##*/}" "$TMP_PATH" 2>&1 >/dev/null
+	$PlistBuddy -c "Clear dict" "$TMP_PATH" >/dev/null 2>&1
+	$PlistBuddy -c "Add :Label string pass-close${VERA_FILE##*/}" "$TMP_PATH" >/dev/null 2>&1
 	$PlistBuddy -c "Add :ServiceDescription string Close pass-vera" "$TMP_PATH"
 	$PlistBuddy -c "Add :EnvironmentalVariables dict" "$TMP_PATH"
 	$PlistBuddy -c "Add :EnvironmentalVariables:PATH string /usr/local/bin:${EXTENSIONS:-$SYSTEM_EXTENSION_DIR}:/usr/local/bin:$(dirname "$(command -v veracrypt)")" "$TMP_PATH"
@@ -252,7 +253,7 @@ _timer() {
 			_success "${PLIST_FILE##*/} timer has been updated"
 			echo 0
 		else
-			mv "$TMP_PATH" "$PLIST_FILE"
+			mv -f "$TMP_PATH" "$PLIST_FILE"
 			if _agent_status; then
 				# if somehow launch agent is still loaded, yet no timer file exists
 				_verbose "Reloading an already running ${PLIST_FILE##*/}"
@@ -368,6 +369,26 @@ _check_key() {
 	fi
 }
 
+_show_usage() {
+  local all size used avail use
+  _status || _die "pass-vera not mounted"
+  all=$(df -h "$("$VERA" --text --list | grep 'password.vera' | rev | cut -d ' ' -f1 | rev)")
+  size=$(awk 'NR==2{print $2}' <<< $all)
+  used=$(awk 'NR==2{print $3}' <<< $all | tr -d '[:upper:]')
+  avail=$(awk 'NR==2{print $4}' <<< $all)
+  use=$(awk 'NR==2{print $5}' <<< $all)
+
+  if [[ ${use%?} -gt 80 ]]; then
+    local COLOR="${GREEN}"
+  elif [[ ${use%?} -ge 50 && ${use%?} -le 80 ]]; then
+    local COLOR="${YELLOW}"
+  else
+    local COLOR="${RED}"
+  fi
+
+  printf "  %b  %b %s/%s %b %s %b\n" "${BOLD}.${RESET}" "${CYAN}pass-vera usage:${RESET} ${BLUE}[${RESET}${COLOR}" "$used" "$size" "${RESET}${BLUE}] [${RESET}${COLOR}" "$use"  "${RESET}${BLUE}]${RESET}"
+}
+
 # =========================================================================================
 # === END HELPER FUNCTIONS ================================================================
 # =========================================================================================
@@ -421,6 +442,7 @@ cmd_open() {
 	# command executed as planned
 	_success "Your password vera has been opened in ${PREFIX}/${path}."
 	_message "You can now use pass as usual."
+	# _show_usage
 	if [[ $timed -eq 0 ]]; then
 		# if the addition to original time is under an hour
 		if rg --color=never -q "^0" "$TIMER_FILE"; then
@@ -626,8 +648,8 @@ DIFM=0 # do it for me
 REENCRYPT=0
 
 # program arguments using GNU getopt
-small_arg="vhVdokrcisp:qnt:f"
-long_arg="verbose,help,debug,version,overwrite-key,vera-key,path:,truecrypt,unsafe,quiet,no-init,timer:,force,status,tmp-key,for-me,reencrypt,invisi-key"
+small_arg="vhVdokrucisp:qnt:f"
+long_arg="verbose,help,debug,version,overwrite-key,vera-key,path:,truecrypt,unsafe,quiet,no-init,timer:,force,status,tmp-key,for-me,reencrypt,invisi-key,usage"
 opts="$($GETOPT -o $small_arg -l $long_arg -n "$PROGRAM $COMMAND" -- "$@")"
 err=$?
 eval set -- "$opts"
@@ -635,6 +657,7 @@ while true; do case $1 in
 	-q|--quiet) QUIET=1; VERBOSE=0; shift ;;
 	-v|--verbose) VERBOSE=1; shift ;;
 	-o|--overwrite-key) OVERWRITE_KEY=1; shift ;;
+  -u|--usage) _show_usage; exit 1 ;;
 	-k|--vera-key) MAKE_VERAKEY=1; shift ;;
 	-i|--invisi-key) INVISI_KEY=1; shift ;;
 	--tmp-key) TMP_KEY=1; shift ;;
