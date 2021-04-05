@@ -657,7 +657,7 @@ while true; do case $1 in
 	-q|--quiet) QUIET=1; VERBOSE=0; shift ;;
 	-v|--verbose) VERBOSE=1; shift ;;
 	-o|--overwrite-key) OVERWRITE_KEY=1; shift ;;
-  -u|--usage) _show_usage; exit 1 ;;
+	-u|--usage) _show_usage; exit 1 ;;
 	-k|--vera-key) MAKE_VERAKEY=1; shift ;;
 	-i|--invisi-key) INVISI_KEY=1; shift ;;
 	--tmp-key) TMP_KEY=1; shift ;;

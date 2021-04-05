@@ -254,6 +254,8 @@ make install
 - [x] ~~Create a homebrew package~~
 - [ ] Add configuration file for veracrypt
 - [ ] Add option to create inner drive
+- [ ] Add an option for `MacTomb`
+- [ ] Add support for `systemd`
 
 ### Feedback / Contribution
 
