@@ -446,6 +446,17 @@ Path to the password vera key file by default \fI~/.password.key.vera\fP
 .I PASSWORD_STORE_VERA_SIZE
 Password vera size in MB, by default \fI10\fP
 
+.SH COMPLETIONS
+.TP
+.I ZSH
+There are three \fI.zsh\fP scripts that should be installed automatically when calling the Makefile; however, there is a zsh
+script titled \fIpasscomp\fP which will modify \fBpass\fP's completion file (\fI_pass\fP) to allow for the three subcommands
+associated with \fBpass vera\fP to work. The only way I have figured out how to call them without this is to use \fIpass-vera\fP,
+though this is not a command.
+.TP
+.I BASH
+There is a bash completion file that I have not tested, though it should work.
+
 
 .SH SEE ALSO
 .BR pass(1),

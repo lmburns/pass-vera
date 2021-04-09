@@ -17,7 +17,7 @@
 
 # shellcheck disable=SC2015,SC2181
 
-typeset -r VERSION="1.0"
+typeset -r VERSION="1.2"
 
 typeset -r RED=$(tput setaf 1) GREEN=$(tput setaf 2) YELLOW=$(tput setaf 3)
 typeset -r BLUE=$(tput setaf 4) MAGENTA=$(tput setaf 5) CYAN=$(tput setaf 6)
@@ -34,6 +34,10 @@ typeset -r TMP_PATH="/tmp/pass-close${VERA_FILE##*/}.plist"
 typeset -r PLIST_FILE="${HOME}/Library/LaunchAgents/${TMP_PATH##*/}"
 typeset -r PlistBuddy="/usr/libexec/PlistBuddy"
 typeset -r TIMER_FILE="${PREFIX}/${path}/.timer"
+
+typeset -r uid="$(id -u "$USER")"
+typeset -r gid="$(id -g "$USER")"
+
 
 typeset -a VERA_MOUNT_OPTS VERA_CREATE_OPTS
 
@@ -71,9 +75,10 @@ _check_vera_mime() { file -Ib "$VERA_KEY" | rg --color=never -q 'octet-stream'; 
 
 # check dependencies needed to use pass vera
 _dependency_check() {
-	command -v "$VERA" &> /dev/null || _die "veracrypt is not present in your \$PATH"
+	command -v "$VERA" &> /dev/null || _die "veracrypt is not present in \$PATH"
 	command -v rg &> /dev/null || _die "ripgrep is not present \$PATH"
-	[[ $(uname) == "Darwin" && -x "/usr/libexec/PlistBuddy" ]] || _die "pass-vera only supports macOS right now"
+	command -v sponge &> /dev/null || _die "GNU moreutils is not present \$PATH"
+	[[ $(uname) == "Darwin" && -x $PlistBuddy ]] || _die "pass-vera only supports macOS right now"
 }
 
 cmd_vera_version() {
@@ -194,8 +199,7 @@ _time_conversion() {
 # $2: path in the password store to save a timer file (not required)
 # return 0 on success, 1 otherwise
 _timer() {
-	local ret delay="$1" path="$2" uid delay_hour delay_minute
-	uid="$(id -u "$USER")"
+	local ret delay="$1" path="$2" delay_hour delay_minute
 	delay_hour="$(echo "$delay" | rg --color=never -io '\d+\s?h(ou)?r(s)?')"
 	delay_minute="$(echo "$delay" | rg --color=never -io '\d+\s?min(ute)?s?')"
 	IFS=" " read -r delay_hour delay_minute <<< "$(date -d "++$(_time_conversion "$delay_hour" "$delay_minute")" "+%R" | awk 'BEGIN{FS=":"} {print $1,$2}')"
@@ -217,7 +221,7 @@ _timer() {
 
 	if [[ $DEBUG -eq 1 ]]; then
 		$PlistBuddy -c "Add :StandardOutPath string $HOME/pass-vera-stdout.log" "$TMP_PATH"
-		$PlistBuddy -c "Add :StandardErrorPath string $HOME/pass-vera-sterr.log" "$TMP_PATH"
+		$PlistBuddy -c "Add :StandardErrorPath string $HOME/pass-vera-stderr.log" "$TMP_PATH"
 	fi
 
 	local ret=$? hour_check min_check digit_check
@@ -280,11 +284,9 @@ _timer() {
 # set ownership when mounting a veracrypt drive
 # $1: veracrpt path
 _set_ownership() {
-	local _uid _gid path="$1"
-	_uid="$(id -u "$USER")"
-	_gid="$(id -g "$USER")"
+	local path="$1"
 	_verbose "Setting user permissions on $path"
-	chown -R "$_uid:$_gid" "$path" || _die "Unable to set ownership permission on $path."
+	chown -R "$uid:$gid" "$path" || _die "Unable to set ownership permission on $path."
 }
 
 # veracrypt helper function
@@ -312,13 +314,13 @@ _gen_key_recipients() {
 
 # gerate the gpg key
 _gpg_key() {
-	local tmp_gpg_key="${TMPDIR:-/tmp}/${RANDOM}${RANDOM}"
 	_gen_key_recipients
 	[[ ! -f $VERA_KEY || $OVERWRITE_KEY -eq 1 ]] && ${EDITOR:-vim} "$VERA_KEY"
 	[[ -f $VERA_KEY ]] || _die "No phrase was entered"
-
-	$GPG -o "$tmp_gpg_key" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e "$VERA_KEY" &&
-		mv -fT "$tmp_gpg_key" "$VERA_KEY" || _die "Could not encrypt phrase"
+	# sponge absorbs the file contents beforew writing to it, otherwise it is no decryptable
+	# alternative is to use a temporary file
+  $GPG -o- "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e "$VERA_KEY" | sponge "$VERA_KEY" ||
+    _die "Could not encrypt phrase"
 }
 
 # generate the temporary key (never accessible again)
@@ -329,7 +331,8 @@ _tmp_key() {
 	${EDITOR:-vim} "$tmp_vera"
 	[[ -f $tmp_vera ]] || _die "No phrase was entered"
 	# encrypt key & overwrite it so it can never be decrypted
-	$GPG -o "$tmp_vera" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e || _die "Could not encrypt phrase"
+	$GPG -o "$tmp_vera" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e "$tmp_vera" ||
+    _die "Could not encrypt phrase"
 }
 
 # generate the key that deletes itself but is reusable
@@ -397,7 +400,6 @@ _show_usage() {
 # $1: subfolder path to mount veracrypt to
 cmd_open() {
 	local path="$1"; shift;
-	local tmp_gpg_key="${TMPDIR:-/tmp}/${RANDOM}${RANDOM}"
 
 	# precautions
 	check_sneaky_paths "$path" "$VERA_FILE" "$VERA_KEY"
@@ -423,8 +425,7 @@ cmd_open() {
 
 		# if key is decrypted, encrypt it
 		_check_decrypted_mime &&
-			$GPG -o "$tmp_gpg_key" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e "$VERA_KEY" &&
-			mv -fT "$tmp_gpg_key" "$VERA_KEY"
+			$GPG -o- "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e "$VERA_KEY" | sponge "$VERA_KEY"
 
 		_set_ownership "${PREFIX}/${path}"
 	else
@@ -463,8 +464,7 @@ cmd_open() {
 # close a password vera
 # $1: file in which veracrypt is associated with that will be closed
 cmd_close() {
-	local _vera_name _vera_file="$1" uid
-	uid="$(id -u "$USER")"
+	local _vera_name _vera_file="$1"
 
 	[[ -z "$_vera_file" ]] && _vera_file="$VERA_FILE"
 
@@ -572,10 +572,8 @@ cmd_vera() {
 	_vera "${VERA_MOUNT_OPTS[@]}"
 
 	# if key is decrypted, encrypt it
-	local tmp_gpg_key="${TMPDIR:-/tmp}/${RANDOM}${RANDOM}"
 	_check_decrypted_mime &&
-		$GPG -o "$tmp_gpg_key" "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e "$VERA_KEY" &&
-		mv -fT "$tmp_gpg_key" "$VERA_KEY"
+		$GPG -o- "${GPG_OPTS[@]}" "${KEY_RECIPIENTS[@]}" -e "$VERA_KEY" | sponge "$VERA_KEY"
 
 	[[ $REENCRYPT -eq 1 ]] && _finish_for_me
 
@@ -599,7 +597,7 @@ cmd_vera() {
 	[[ -z "$TIMER" ]] || timed="$(_timer "$TIMER" "$path")"
 
 	# command executed as planned
-	_success "Your password vera has been created and opened in ${PREFIX}/${path}."
+	_success "Your password vera has been created and opened in: ${CYAN}${PREFIX}/${path}${RESET}"
 	[[ -z "$ret" ]] || _success "$ret"
 	_message "Your vera is: ${CYAN}${VERA_FILE}${RESET}"
 

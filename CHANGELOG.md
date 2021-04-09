@@ -1,10 +1,14 @@
 
 <a name="v1.2"></a>
-## [v1.2](https://github.com/lmburns/pass-vera/compare/v1.1...v1.2) (2021-04-04)
+## [v1.2](https://github.com/lmburns/pass-vera/compare/v1.1...v1.2) (2021-04-05)
 
 ### Added
 
 * added usage as an argument
+
+### Modified
+
+* modified readme with more goals
 
 
 <a name="v1.1"></a>

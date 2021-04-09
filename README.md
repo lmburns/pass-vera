@@ -248,6 +248,11 @@ make install
 4. `rm -rf ~/.password-store-bkp`
 
 ---
+### Shell Completions
+
+There is a script in the `pass-scripts` folder titled `passcomp`. It is a zsh script that will find the completion file (`_pass`) for `pass` and will modify the subcommands so that the completions will actually work. There are zsh and bash completion files for each subcommand that I have created (`vera`, `open`, `close`) which will be called in `_pass`. The only way that I have figured out how to get the completion to call without this is if a hyphen is added between the commands, e.g., `pass-vera`; however, this is not a command so the script is a workaround for now.
+
+---
 ### TODO
 
 - [x] ~~Add a 'do-it-for-me' option~~
