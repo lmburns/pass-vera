@@ -15,12 +15,14 @@ SYNOPSIS
 ========
 
 **pass vera** *\<gpg-id\>* \[**-n**\] \[**-i** \| **-k** \|
-**\--tmp-key**\] \[**-o**\] \[**-c**\] \[**-p** *path*\] \[**-q** \|
-**-v**\] \[**\--for-me**\] \[**-r**\] \[**-s**\] \[**-u**\] \[**-t**
-*time*\]\
-**pass open** \[**-f**\] \[**-q** \| **-v**\] \[**-c**\] \[**-i**\]
-\[**-t** *time*\]\
-**pass close** \[**-f**\] \[**-q** \| **-v**\]
+**\--tmp-key**\] \[**-o**\] \[**-y**\] \[**-p** *path*\] \[**-q** \|
+**-v**\] \[**\--for-me**\] \[**-r**\] \[**-s**\] \[**-u**\] \[**-c**\]
+\[**-g**\] \[**-t** *time*\]\
+**pass open** \[**-f**\] \[**-q** \| **-v**\] \[**-c**\] \[**-y**\]
+\[**-i**\] \[**-t** *time*\]
+
+\
+**pass close** \[**-f**\] \[**-q** \| **-v**\] \[**-c**\]
 
 DESCRIPTION
 ===========
@@ -40,7 +42,7 @@ pass-vera can be given a timer as an argument that will automatically
 close the password-store after the specified amount of time has passed.
 
 A configuration file can be used to create and mount the VeraCrypt
-container. Using the command **pass vera \--gen-comp** will generate a
+container. Using the command **pass vera \--gen-conf** will generate a
 configuration file located at *\$XDG_CONFIG_HOME/pass-vera/vera.JSON*.
 To use this configuration file, specify **\--conf** when using all three
 commands. *NOTE*: be aware that (at least at the moment)
@@ -95,7 +97,7 @@ COMMAND
     \[**\--truecrypt**, **-y**\] \[**\--vera-key**, **-k**\]
     \[**\--overwrite-key**, **-o**\] \[**\--tmp-key**\]
     \[**\--invisi-key**, **-i**\] \[**\--force**, **-f**\]
-    \[**\--status**, **-s**\] \[**\--gen-comp**\] \[**\--conf**,
+    \[**\--status**, **-s**\] \[**\--gen-conf**\] \[**\--conf**,
     **-c**\] \[**\--usage**, **-u**\] \[**\--for-me**\]
     \[**\--reencrypt**, **-r**\]
 
@@ -592,6 +594,10 @@ ENVIRONMENT VARIABLES
 *PASSWORD_STORE_VERA_SIZE*
 
 :   Password vera size in MB, by default *10*
+
+*PASSWORD_STORE_VERA_CONF*
+
+:   Location of configuration file
 
 CONFIGURATION
 =============

@@ -29,26 +29,27 @@ The text file created in this process is used as a keyfile to the vera. It works
 ### Usage
 
 ```
-pass vera 1.2 - A pass extension that adds another layer of encryption
+pass vera 1.3 - A pass extension that adds another layer of encryption
 by encrypting the password-store inside a veracrypt drive.
 
 Usage:
-    pass vera <gpg-id> [-n] [-t time] [-f] [-p subfolder] [-c] [-s]
+    pass vera <gpg-id> [-n] [-t time] [-f] [-p subfolder] [-y] [-s]
                             [-i | -k | --tmp-key] [--for-me] [-r] [-o]
+                            [-u] [-c] [-g]
         Create and initialize a new password vera
         Use gpg-id for encryption of both vera and passwords
 
-   pass open [subfolder] [-i] [-c] [-t time] [-f]
+   pass open [subfolder] [-i] [-c] [-t time] [-c] [-f]
           Open a password vera
 
-    pass close [store]
+    pass close [-c] [store]
         Close a password vera
 
 Options:
     -n, --no-init        Do not initialize the password store
     -t, --timer          Close the store after a given time
     -p, --path           Create the store for that specific subfolder
-    -c, --truecrypt      Enable compatibility with truecrypt
+    -y, --truecrypt      Enable compatibility with truecrypt
     -k, --vera-key       Create a key with veracrypt instead of GPG
     -o, --overwrite-key  Overwrite existing key
     -i, --invisi-key     Create a key that doesn't exist when it's not being used
@@ -58,7 +59,8 @@ Options:
     -f, --force          Force operation (i.e. even if mounted volume is active)
     -s, --status         Show status of pass vera (open or closed)
     -u, --usage          Show space available and space used on the container
-    -g, --conf           Generate configuration file
+    -c, --conf           Use configuration file (no path needed)
+    -g, --gen-conf       Generate configuration file
     -q, --quiet          Be quiet
     -v, --verbose        Be verbose
     -d, --debug          Debug the launchd agent with a stderr file located in $HOME folder
@@ -253,7 +255,7 @@ make install
 
 #### JSON
 
-To use multiple `vera` containers, there is an option to create a configuration file. If the command `pass vera --gen-comp` is passed, a JSON configuration template file will be created at `$XDG_CONFIG_HOME/pass-vera/vera.json`. To use this configuration file `-c` or `--conf` must be passed as a parameter when using all three commands (`vera`, `open`, `close`).
+To use multiple `vera` containers, there is an option to create a configuration file. If the command `pass vera --gen-conf` is passed, a JSON configuration template file will be created at `$XDG_CONFIG_HOME/pass-vera/vera.json`. To use this configuration file `-c` or `--conf` must be passed as a parameter when using all three commands (`vera`, `open`, `close`).
 
 #### YAML
 

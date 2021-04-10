@@ -96,22 +96,23 @@ cmd_vera_usage() {
 	echo
 	cat <<-_EOF
 	${YELLOW}Usage:${RESET}
-	    ${GREEN}${PROGRAM} vera${RESET} ${MAGENTA}<${RESET}${CYAN}gpg-id${RESET}${MAGENTA}>${RESET} ${MAGENTA}[${RESET}${BLUE}-n${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-t${RESET} ${YELLOW}time${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-f${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-p${RESET} ${YELLOW}subfolder${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-s${RESET}${MAGENTA}]${RESET}
+	    ${GREEN}${PROGRAM} vera${RESET} ${MAGENTA}<${RESET}${CYAN}gpg-id${RESET}${MAGENTA}>${RESET} ${MAGENTA}[${RESET}${BLUE}-n${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-t${RESET} ${YELLOW}time${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-f${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-p${RESET} ${YELLOW}subfolder${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-y${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-s${RESET}${MAGENTA}]${RESET}
 	                            ${MAGENTA}[${RESET}${BLUE}-i${RESET} ${MAGENTA}|${RESET} ${BLUE}-k${RESET} ${MAGENTA}|${RESET} ${BLUE}--tmp-key${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}--for-me${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-r${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-o${RESET}${MAGENTA}]${RESET}
+	                            ${MAGENTA}[${RESET}${BLUE}-u${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-g${RESET}${MAGENTA}]${RESET}
 	        Create and initialize a new password vera
 	        Use gpg-id for encryption of both vera and passwords
 
-	   ${GREEN}${PROGRAM} open${RESET} ${MAGENTA}[${RESET}${YELLOW}subfolder${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-i${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-t${RESET} ${YELLOW}time${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-f${RESET}${MAGENTA}]${RESET}
+	   ${GREEN}${PROGRAM} open${RESET} ${MAGENTA}[${RESET}${YELLOW}subfolder${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-i${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-t${RESET} ${YELLOW}time${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-f${RESET}${MAGENTA}]${RESET}
 	          Open a password vera
 
-	    ${GREEN}${PROGRAM} close${RESET} ${MAGENTA}[${RESET}${YELLOW}store${RESET}${MAGENTA}]${RESET}
+	    ${GREEN}${PROGRAM} close${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${YELLOW}store${RESET}${MAGENTA}]${RESET}
 	        Close a password vera
 
 	${MAGENTA}Options:${RESET}
 	    ${BLUE}-n${RESET}, ${BLUE}--no-init${RESET}        Do not initialize the password store
 	    ${BLUE}-t${RESET}, ${BLUE}--timer${RESET}          Close the store after a given time
 	    ${BLUE}-p${RESET}, ${BLUE}--path${RESET}           Create the store for that specific subfolder
-	    ${BLUE}-c${RESET}, ${BLUE}--truecrypt${RESET}      Enable compatibility with truecrypt
+	    ${BLUE}-y${RESET}, ${BLUE}--truecrypt${RESET}      Enable compatibility with truecrypt
 	    ${BLUE}-k${RESET}, ${BLUE}--vera-key${RESET}       Create a key with veracrypt instead of GPG
 	    ${BLUE}-o${RESET}, ${BLUE}--overwrite-key${RESET}  Overwrite existing key
 	    ${BLUE}-i${RESET}, ${BLUE}--invisi-key${RESET}     Create a key that doesn't exist when it's not being used
@@ -121,7 +122,8 @@ cmd_vera_usage() {
 	    ${BLUE}-f${RESET}, ${BLUE}--force${RESET}          Force operation (i.e. even if mounted volume is active)
 	    ${BLUE}-s${RESET}, ${BLUE}--status${RESET}         Show status of pass vera (open or closed)
 	    ${BLUE}-u${RESET}, ${BLUE}--usage${RESET}          Show space available and space used on the container
-	    ${BLUE}-g${RESET}, ${BLUE}--conf${RESET}           Generate configuration file
+	    ${BLUE}-c${RESET}, ${BLUE}--conf${RESET}           Use configuration file (no path needed)
+	    ${BLUE}-g${RESET}, ${BLUE}--gen-conf${RESET}       Generate configuration file
 	    ${BLUE}-q${RESET}, ${BLUE}--quiet${RESET}          Be quiet
 	    ${BLUE}-v${RESET}, ${BLUE}--verbose${RESET}        Be verbose
 	    ${BLUE}-d${RESET}, ${BLUE}--debug${RESET}          Debug the launchd agent with a stderr file located in \$HOME folder
