@@ -1,0 +1,24 @@
+# normal, hidden (if hidden, a normal volume must be created first)
+volume-type:    normal
+# any file
+create:         /Users/username/.password.vera
+# any size
+size:           15M
+# aes, serpent, twofish, camellia, kuznyechik
+encryption:     AES
+# sha-512, whirlpool, sha-256, streebog
+hash:           sha-512
+# non, fat, exfat, apfs, macOS extended
+filesystem:     exFAT
+# positive integer (Personal Iterations Multiplier)
+pim:            0
+# none, any file
+keyfiles:       /Users/username/.password.vera.key
+# none, urandom
+random-source:  /dev/urandom
+# 1 or 0
+truecrypt:      0
+# 1 or 0
+unsafe:         0
+# slot to mount container
+slot:           0

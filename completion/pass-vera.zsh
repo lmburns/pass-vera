@@ -3,6 +3,7 @@
 #description Manage your password store in a VeraCrypt drive
 
 _pass-vera() {
+	_pass_comp_keys
 	_arguments : \
 		{-h,--help}'[display help information]' \
 		{-V,--version}'[display version information]' \
@@ -22,12 +23,16 @@ _pass-vera() {
 		{-v,--verbose}'[be verbose]' \
 		{-d,--debug}'[print VeraCrypt debug messages]' \
 		'--unsafe[speed up vera creation (for testing only)]'
-
-	_pass_complete_keys
 }
 
 _pass_complete_entries_with_dirs () {
 	_pass_complete_entries_helper -type d
+}
+
+_pass_comp_keys () {
+	local IFS=$'\n'
+	# Extract names and email addresses from gpg --list-keys
+	_values 'gpg keys' $(gpg --list-secret-keys --with-colons | cut -d : -f 10 | sort -u | sed -n '/^$/d; /@/p' | awk '/<.*>/ {print $NF}' | sed 's/[<>]//g')
 }
 
 _pass-vera "$@"

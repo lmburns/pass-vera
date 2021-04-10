@@ -1,4 +1,20 @@
 
+<a name="v1.3"></a>
+## [v1.3](https://github.com/lmburns/pass-vera/compare/v1.2.1...v1.3) (2021-04-09)
+
+### Added
+
+* added option for configuration files
+
+
+<a name="v1.2.1"></a>
+## [v1.2.1](https://github.com/lmburns/pass-vera/compare/v1.2...v1.2.1) (2021-04-09)
+
+### Using
+
+* Using sponge instead of moving temp file, added script for completions to work
+
+
 <a name="v1.2"></a>
 ## [v1.2](https://github.com/lmburns/pass-vera/compare/v1.1...v1.2) (2021-04-05)
 

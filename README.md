@@ -248,6 +248,32 @@ make install
 4. `rm -rf ~/.password-store-bkp`
 
 ---
+### Configuration File
+
+#### JSON
+
+To use multiple `vera` containers, there is an option to create a configuration file. If the command `pass vera --gen-comp` is passed, a JSON configuration template file will be created at `$XDG_CONFIG_HOME/pass-vera/vera.json`. To use this configuration file `-c` or `--conf` must be passed as a parameter when using all three commands (`vera`, `open`, `close`).
+
+#### YAML
+
+If, for whatever reason, one would like to use a YAML file instead of a JSON, this filetype is also supported. Below are all available options for each argument. There is also a [directory](example_configs) of example configuration files in both JSON and YAML.
+
+```yaml
+volume-type:    normal # normal, hidden (if hidden, a normal volume must be created first)
+create:         /Users/username/.password.vera  # any file
+size:           15M     # any size
+encryption:     AES     # aes, serpent, twofish, camellia, kuznyechik
+hash:           sha-512 # sha-512, whirlpool, sha-256, streebog
+filesystem:     exFAT   # non, fat, exfat, apfs, macOS extended
+pim:            0   # positive integer (Personal Iterations Multiplier)
+keyfiles:       /Users/username/.password.vera.key  # none, any file
+random-source:  /dev/urandom    # none, urandom
+truecrypt:      0   # 1 or 0
+unsafe:         0   # 1 or 0
+slot:           0   # slot to mount container
+```
+
+---
 ### Shell Completions
 
 There is a script in the `pass-scripts` folder titled `passcomp`. It is a zsh script that will find the completion file (`_pass`) for `pass` and will modify the subcommands so that the completions will actually work. There are zsh and bash completion files for each subcommand that I have created (`vera`, `open`, `close`) which will be called in `_pass`. The only way that I have figured out how to get the completion to call without this is if a hyphen is added between the commands, e.g., `pass-vera`; however, this is not a command so the script is a workaround for now.
@@ -257,7 +283,7 @@ There is a script in the `pass-scripts` folder titled `passcomp`. It is a zsh sc
 
 - [x] ~~Add a 'do-it-for-me' option~~
 - [x] ~~Create a homebrew package~~
-- [ ] Add configuration file for veracrypt
+- [x] ~~Add configuration file for veracrypt~~
 - [ ] Add option to create inner drive
 - [ ] Add an option for `MacTomb`
 - [ ] Add support for `systemd`

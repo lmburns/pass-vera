@@ -1,0 +1,14 @@
+{
+    "volume-type": "normal",
+    "create": "/Users/username/.password.vera2",
+    "size": "15M",
+    "encryption": "AES",
+    "hash": "sha-512",
+    "filesystem": "exFAT",
+    "pim": "0",
+    "keyfiles": "/Users/username/.password.vera.key2",
+    "random-source": "/dev/urandom",
+    "truecrypt": "0",
+    "unsafe": "0",
+    "slot": 0
+}
