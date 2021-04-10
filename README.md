@@ -29,22 +29,22 @@ The text file created in this process is used as a keyfile to the vera. It works
 ### Usage
 
 ```
-pass vera 1.0 - A pass extension that adds another layer of encryption
-                by encrypting the password-store inside a veracrypt drive.
+pass vera 1.2 - A pass extension that adds another layer of encryption
+by encrypting the password-store inside a veracrypt drive.
 
-  Usage:
+Usage:
     pass vera <gpg-id> [-n] [-t time] [-f] [-p subfolder] [-c] [-s]
-                        [-i | -k | --tmp-key] [--for-me] [-r] [-o]
+                            [-i | -k | --tmp-key] [--for-me] [-r] [-o]
         Create and initialize a new password vera
         Use gpg-id for encryption of both vera and passwords
 
-    pass open [subfolder] [-i] [-c] [-t time] [-f]
-        Open a password vera
+   pass open [subfolder] [-i] [-c] [-t time] [-f]
+          Open a password vera
 
     pass close [store]
         Close a password vera
 
-  Options:
+Options:
     -n, --no-init        Do not initialize the password store
     -t, --timer          Close the store after a given time
     -p, --path           Create the store for that specific subfolder
@@ -57,7 +57,8 @@ pass vera 1.0 - A pass extension that adds another layer of encryption
     -r, --reencrypt      Reencrypt passwords when creating to new vera (use with --for-me)
     -f, --force          Force operation (i.e. even if mounted volume is active)
     -s, --status         Show status of pass vera (open or closed)
-    -u, --usage          Show the space used and space available on the container
+    -u, --usage          Show space available and space used on the container
+    -g, --conf           Generate configuration file
     -q, --quiet          Be quiet
     -v, --verbose        Be verbose
     -d, --debug          Debug the launchd agent with a stderr file located in $HOME folder
