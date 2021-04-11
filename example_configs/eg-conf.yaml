@@ -4,11 +4,14 @@ volume-type:    normal
 create:         /Users/username/.password.vera
 # any size
 size:           15M
-# aes, serpent, twofish, camellia, kuznyechik
-encryption:     AES
-# sha-512, whirlpool, sha-256, streebog
+# (1) aes (2) serpent (3) twofish (4) camellia (5) kuznyechik
+# (6) aes-twofish (7) aes-twofish-serpent (8) camellia-kuznyechik
+# (9) camellia-serpent (10) kuznyechik-aes (11) kuznyechik-serpent-camellia
+# (12) kuznyechik-twofish (13) serpent-aes (14) serpent-twofish-aes (15) twofish-serpent
+encryption:     aes-twofish-serpent
+# (1) sha-512 (2) whirlpool (3) sha-256 (4) streebog
 hash:           sha-512
-# non, fat, exfat, apfs, macOS extended
+# (1) none (2) fat (3) exfat (4) apfs (5) mac-os-extended
 filesystem:     exFAT
 # positive integer (Personal Iterations Multiplier)
 pim:            0

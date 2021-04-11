@@ -6,12 +6,12 @@ by encrypting the password-store inside a \fBveracrypt\fP(1) drive.
 
 .SH SYNOPSIS
 \fBpass vera\fP \fI<gpg-id>\fP [\fB-n\fP] [\fB-i\fP | \fB-k\fP | \fB--tmp-key\fP] [\fB-o\fP] [\fB-y\fP] [\fB-p\fP \fIpath\fP] [\fB-q\fP | \fB-v\fP]
-                   [\fB--for-me\fP] [\fB-r\fP] [\fB-s\fP] [\fB-u\fP] [\fB-c\fP] [\fB-g\fP] [\fB-t\fP \fItime\fP]
+                   [\fB--for-me\fP] [\fB-r\fP] [\fB-s\fP] [\fB-u\fP] [\fB-c\fP [\fIa|auto|*\fP]] [\fB-g\fP] [\fB-t\fP \fItime\fP]
 .br
-\fBpass open\fP [\fB-f\fP] [\fB-q\fP | \fB-v\fP] [\fB-c\fP] [\fB-y\fP] [\fB-i\fP] [\fB-t\fP \fItime\fP]
+\fBpass open\fP [\fB-f\fP] [\fB-q\fP | \fB-v\fP] [\fB-c\fP [\fIa|auto|*\fP]] [\fB-y\fP] [\fB-i\fP] [\fB-t\fP \fItime\fP]
 
 .br
-\fBpass close\fP [\fB-f\fP] [\fB-q\fP | \fB-v\fP] [\fB-c\fP]
+\fBpass close\fP [\fB-f\fP] [\fB-q\fP | \fB-v\fP] [\fB-c\fP] \fIa|auto|*\fP]]
 
 .SH DESCRIPTION
 The file and directory names in the password-store that is created by \fBpass\fP(1)
@@ -28,11 +28,11 @@ as an argument that will automatically close the password-store after the
 specified amount of time has passed.
 
 A configuration file can be used to create and mount the VeraCrypt container. Using the
-command \fBpass vera --gen-conf\fP will generate a configuration file located at
-\fI$XDG_CONFIG_HOME/pass-vera/vera.JSON\fP. To use this configuration file, specify \fB--conf\fP
-when using all three commands. \fINOTE\fP: be aware that (at least at the moment)
-\fB--invisi-key\fP or \fB--tmp-key\fP are unable to be used when specifying \fB--conf\fP.
-See the \fBCONFIGURATION\fP section for all available options.
+command \fBpass vera --gen-conf\fP [\fIJSON | YAML\fP] will generate a configuration file
+located at \fI$XDG_CONFIG_HOME/pass-vera/vera.JSON\fP. To use this configuration file, specify
+\fB--conf\fP [\fIa|auto|*\fP] when using all three commands. \fINOTE\fP: be aware that
+(at least at the moment) \fB--invisi-key\fP or \fB--tmp-key\fP are unable to be used when
+specifying \fB--conf\fP. See the \fBCONFIGURATION\fP section for all available options.
 
 .TP
 .B BEFORE USING THIS PROGRAM:
@@ -69,8 +69,8 @@ location, otherwise copy it to \fI~/.password-store\fP. Now, pass can be used as
 \fBpass vera\fP \fI<gpg-id>\fP [ \fB--no-init\fP, \fB-n\fP ] [\fB--timer\fP=\fItime\fP, \fB-t\fP \fItime\fP]
    [ \fB--path\fP=\fIsubfolder\fP, \fB-p\fP \fIsubfolder\fP ] [\fB--truecrypt\fP, \fB-y\fP]
    [\fB--vera-key\fP, \fB-k\fP] [\fB--overwrite-key\fP, \fB-o\fP] [\fB--tmp-key\fP]
-   [\fB--invisi-key\fP, \fB-i\fP] [\fB--force\fP, \fB-f\fP] [\fB--status\fP, \fB-s\fP] [\fB--gen-conf\fP]
-   [\fB--conf\fP, \fB-c\fP] [\fB--usage\fP, \fB-u\fP] [\fB--for-me\fP] [\fB--reencrypt\fP, \fB-r\fP]
+   [\fB--invisi-key\fP, \fB-i\fP] [\fB--force\fP, \fB-f\fP] [\fB--status\fP, \fB-s\fP] [\fB--gen-conf\fP [\fIJSON | YAML\fP]]
+   [\fB--conf\fP=[\fIa|auto|*\fP], \fB-c\fP [\fIa|auto|*\fP]] [\fB--usage\fP, \fB-u\fP] [\fB--for-me\fP] [\fB--reencrypt\fP, \fB-r\fP]
 
 Create and initialize a new password vera. This command must be run first,
 before a password-store can be used. The user will be prompted with a blank text
@@ -96,7 +96,7 @@ store will automatically close using a \fBlaunchctl\fP(1) agent that runs a scri
 after the given time. The agent will be unloaded once the pass vera is closed and dismounted,
 then a notification will be sent using an osascript.
 
-\fINote\fP: The launchctl agent is rounded to the nearest minute and may not close
+\fINOTE\fP: The launchctl agent is rounded to the nearest minute and may not close
 in the exact amount of specified time. For example, the time is 10:02:20 and a 1 minute
 timer is given, the launchctl agent will run in 40 seconds.
 
@@ -162,13 +162,17 @@ If \fB--reencrypt\fP is specified, pass vera will re-encrypt the files within th
 existing password-store when transfering them over the location of the new password-store.
 This option is only able to be used whenever \fB--for-me\fP is also used.
 
-If \fB--gen-conf\fP or \fB-g\fP is specified, pass vera will create a \fI.JSON\fP configuration
-file at the location \fI$XDG_CONFIG_HOME/pass-vera/vera.JSON\fP and will exit.
+If \fB--gen-conf\fP or \fB-g\fP is specified with a filetype of \fIJSON\fP or \fIYAML\fP, pass vera will create a configuration file at the location \fI$XDG_CONFIG_HOME/pass-vera\fP and will exit.
 
-If \fB--conf\fP or \fB-c\fP is specified, pass vera will use the options that are specified
-within this file. The location of the file is \fI$XDG_CONFIG_HOME/pass-vera/vera.JSON\fP.
-A \fI.YAML\fP file can also be used. Examples are located at the bottom of this page in
-\fBCONFIGURATION\fP.
+If \fB--conf\fP or \fB-c\fP is specified, with \fIa|auto\fP or anything else (can use \fI*\fP)
+pass vera will attempt to \fIauto\fPmatically choose the configuration file in the directory
+\fI$XDG_CONFIG_HOME/pass-vera\fP. If only one configuration file is present, pass vera will
+automatically mount the password store. However, if multiple configuration files are present
+and \fIauto\fP is passed, an option will be presented to choose one of the configurations through
+a fuzzy finder (\fBfzf(1)\fP). If you would like to bypass this prompt, any other character
+besides \fIa\fP or \fIauto\fP will bring up a fuzzy finder to select the configuration.
+A \fI.YAML\fP file can also be used. The only filetypes that are supported are JSON and YAML.
+Examples are located at the bottom of this page in the \fBCONFIGURATION\fP section.
 
 If \fB--force\fP is specified, the password vera will create or mount the
 password-store to a volume that is in use, or it will force dismount a volume
@@ -182,7 +186,7 @@ of space used on the container will be displayed.
 
 .TP
 \fBpass open\fP [\fB--timer\fP=\fItime\fP, \fB-t\fP \fItime\fP] [\fB--truecrypt\fP, \fB-y\fP]
-   [\fB--invisi-key\fP, \fB-i\fP] [\fB--force\fP, \fB-f\fP] [\fB--conf\fP, \fB-c\fP] [\fIsubfolder\fP]
+   [\fB--invisi-key\fP, \fB-i\fP] [\fB--force\fP, \fB-f\fP] [\fB--conf\fP=[\fIa|auto|*\fP], \fB-c\fP [\fIa|auto|*\fP]] [\fIsubfolder\fP]
 
 Open a password vera. If a \fItime\fP parameter is given (e.g., "1 hour 5 minutes")
 then a launchctl agent will be loaded. After the specified time interval,
@@ -208,9 +212,12 @@ If \fB--truecrypt\fP or \fB-y\fP was specified when creating the password-vera (
 \fIPASSWORD_STORE_VERA_FILE\fP to a file created by TrueCrypt), then to open the password-vera,
 \fB--truecrypt\fP or \fB-y\fP must also be specified.
 
-If \fB--conf\fP or \fB-c\fP is specified, pass vera will use the information located
-within the configuration file (\fI$XDG_CONFIG_HOME/pass-vera/vera.JSON\fP). The \fI--ivisi-key\fP
-and \fI--tmp-key\fP options are unable to be used when using a configuration file at this point.
+If \fB--conf\fP or \fB-c\fP is specified when creating the vera, then \fI-c\fP must be specified
+again when opening the vera. Pass vera will use the information located within the configuration
+file (\fI$XDG_CONFIG_HOME/pass-vera\fP). The \fI--ivisi-key\fP and \fI--tmp-key\fP options are
+unable to be used when using a configuration file at this point. See \fI--conf\fP in the
+\fBpass vera\fP section for more information, as well as the \fBCONFIGURATION\fP section at
+the bottom of this page.
 
 If \fB--force\fP is specified, the password vera will create or mount the
 password-store to a volume that is in use, or it will force dismount a volume
@@ -221,9 +228,13 @@ Otherwise, pass vera will open in \fIPASSWORD_STORE_DIR\fP if set, and if not, t
 it will open in \fI~/.password-store\fP.
 
 .TP
-\fBpass close\fP [\fB--force\fP, \fB-f\fP] [\fB--conf\fP, \fB-c\fP] [\fIstore\fP]
+\fBpass close\fP [\fB--force\fP, \fB-f\fP] [\fB--conf\fP=[\fIa|auto|*\fP], \fB-c\fP [\fIa|auto|*\fP]] [\fIstore\fP]
 
 Close a password vera.
+
+If \fB--conf\fP or \fB-c\fP was specified when creating the vera, it must again be specified
+when closing the vera. See \fI--conf\fP in the \fBpass vera\fP section for more information,
+as well as the \fBCONFIGURATION\fP section at the bottom of this page.
 
 If \fB--force\fP is specified, the password vera will create or mount the
 password-store to a volume that is in use, or it will force dismount a volume
@@ -242,11 +253,11 @@ Do not initialize the password-store
 
 .TP
 \fB\-g\fB, \-\-gen-conf\fR
-Generate a JSON configuration file
+Generate a default JSON or YAML configuration file
 
 .TP
 \fB\-c\fB, \-\-conf\fR
-Use the configuration file placed at $XDG_CONFIG_HOME/pass-vera/vera.JSON
+Use the configuration file placed at $XDG_CONFIG_HOME/pass-vera (JSON or YAML)
 
 .TP
 \fB\-t\fB, \-\-timer\fR
@@ -495,11 +506,21 @@ In the example YAML configuration file below, available options are mentioned ab
 .br
 \fBsize:           15M\fP \fI# any size\fP
 .br
-\fBencryption:     AES\fP \fI# aes, serpent, twofish, camellia, kuznyechik\fP
+\fBencryption:     aes-twofish-serpent\fP
+.br
+\fI# (1) aes (2) serpent (3) twofish (4) camellia (5) kuznyechik\fP
+.br
+\fI# (6) aes-twofish (7) aes-twofish-serpent (8) camellia-kuznyechik\fP
+.br
+\fI# (9) camellia-serpent (10) kuznyechik-aes (11) kuznyechik-serpent-camellia\fP
+.br
+\fI# (12) kuznyechik-twofish (13) serpent-aes (14) serpent-twofish-aes \fP
+.br
+\fI# (15) twofish-serpent\fP
 .br
 \fBhash:           sha-512\fP \fI# sha-512, whirlpool, sha-256, streebog\fP
 .br
-\fBfilesystem:     exFAT\fP \fI# non, fat, exfat, apfs, macOS extended\fP
+\fBfilesystem:     exFAT\fP \fI# non, fat, exfat, apfs, mac-os-extended\fP
 .br
 \fBpim:            0\fP \fI# positive integer (Personal Iterations Multiplier)\fP
 .br
@@ -517,8 +538,9 @@ In the example YAML configuration file below, available options are mentioned ab
 .SH COMPLETIONS
 .TP
 .I ZSH
-There are three \fI.zsh\fP scripts that should be installed automatically when calling the Makefile; however, there is a zsh
-script titled \fIpasscomp\fP which will modify \fBpass\fP's completion file (\fI_pass\fP) to allow for the three subcommands
+There are three \fI.zsh\fP scripts that should be installed automatically when
+calling the Makefile; however, there is a zsh script titled \fIpasscomp\fP which
+will modify \fBpass\fP's completion file (\fI_pass\fP) to allow for the three subcommands
 associated with \fBpass vera\fP to work. The only way I have figured out how to call them without this is to use \fIpass-vera\fP,
 though this is not a command.
 .TP
@@ -530,10 +552,10 @@ There is a bash completion file that I have not tested, though it should work.
 .BR pass(1),
 .BR veracrypt(1),
 .BR launchctl(1),
+.BR fzf(1),
 .BR pass-clip(1)
 .BR pass-ssh(1),
 .BR pass-import(1),
-.BR pass-otp(1)
 
 .SH AUTHORS
 .B pass vera
