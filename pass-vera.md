@@ -1,5 +1,5 @@
 ---
-date: March 2021
+date: March
 section: 1
 title: pass-vera
 ---
@@ -16,13 +16,14 @@ SYNOPSIS
 
 **pass vera** *\<gpg-id\>* \[**-n**\] \[**-i** \| **-k** \|
 **\--tmp-key**\] \[**-o**\] \[**-y**\] \[**-p** *path*\] \[**-q** \|
-**-v**\] \[**\--for-me**\] \[**-r**\] \[**-s**\] \[**-u**\] \[**-c**\]
-\[**-g**\] \[**-t** *time*\]\
-**pass open** \[**-f**\] \[**-q** \| **-v**\] \[**-c**\] \[**-y**\]
-\[**-i**\] \[**-t** *time*\]
+**-v**\] \[**\--for-me**\] \[**-r**\] \[**-s**\] \[**-u**\] \[**-c**
+\[*a\|auto\|\**\]\] \[**-g**\] \[**-t** *time*\]\
+**pass open** \[**-f**\] \[**-q** \| **-v**\] \[**-c**
+\[*a\|auto\|\**\]\] \[**-y**\] \[**-i**\] \[**-t** *time*\]
 
 \
 **pass close** \[**-f**\] \[**-q** \| **-v**\] \[**-c**\]
+*a\|auto\|\**\]\]
 
 DESCRIPTION
 ===========
@@ -42,13 +43,11 @@ pass-vera can be given a timer as an argument that will automatically
 close the password-store after the specified amount of time has passed.
 
 A configuration file can be used to create and mount the VeraCrypt
-container. Using the command **pass vera \--gen-conf** will generate a
-configuration file located at *\$XDG_CONFIG_HOME/pass-vera/vera.JSON*.
-To use this configuration file, specify **\--conf** when using all three
-commands. *NOTE*: be aware that (at least at the moment)
-**\--invisi-key** or **\--tmp-key** are unable to be used when
-specifying **\--conf**. See the **CONFIGURATION** section for all
-available options.
+container. Using the command **pass vera \--gen-conf** \[*JSON \|
+YAML*\] will generate a configuration file located at
+*\$XDG_CONFIG_HOME/pass-vera/vera.JSON*. To use this configuration file,
+specify **\--conf** \[*a\|auto\|\**\] when using all three commands. See
+the **CONFIGURATION** section for all available options.
 
 **BEFORE USING THIS PROGRAM:**
 
@@ -97,9 +96,10 @@ COMMAND
     \[**\--truecrypt**, **-y**\] \[**\--vera-key**, **-k**\]
     \[**\--overwrite-key**, **-o**\] \[**\--tmp-key**\]
     \[**\--invisi-key**, **-i**\] \[**\--force**, **-f**\]
-    \[**\--status**, **-s**\] \[**\--gen-conf**\] \[**\--conf**,
-    **-c**\] \[**\--usage**, **-u**\] \[**\--for-me**\]
-    \[**\--reencrypt**, **-r**\]
+    \[**\--status**, **-s**\] \[**\--gen-conf** \[*JSON \| YAML*\]\]
+    \[**\--conf**=\[*a\|auto\|\**\], **-c** \[*a\|auto\|\**\]\]
+    \[**\--usage**, **-u**\] \[**\--for-me**\] \[**\--reencrypt**,
+    **-r**\]
 
 Create and initialize a new password vera. This command must be run
 first, before a password-store can be used. The user will be prompted
@@ -131,7 +131,7 @@ that runs a script after the given time. The agent will be unloaded once
 the pass vera is closed and dismounted, then a notification will be sent
 using an osascript.
 
-*Note*: The launchctl agent is rounded to the nearest minute and may not
+*NOTE*: The launchctl agent is rounded to the nearest minute and may not
 close in the exact amount of specified time. For example, the time is
 10:02:20 and a 1 minute timer is given, the launchctl agent will run in
 40 seconds.
@@ -204,15 +204,22 @@ within the existing password-store when transfering them over the
 location of the new password-store. This option is only able to be used
 whenever **\--for-me** is also used.
 
-If **\--gen-conf** or **-g** is specified, pass vera will create a
-*.JSON* configuration file at the location
-*\$XDG_CONFIG_HOME/pass-vera/vera.JSON* and will exit.
+If **\--gen-conf** or **-g** is specified with a sub-argument of *JSON*
+or *YAML*, pass vera will create a configuration file at the location
+*\$XDG_CONFIG_HOME/pass-vera* and will exit.
 
-If **\--conf** or **-c** is specified, pass vera will use the options
-that are specified within this file. The location of the file is
-*\$XDG_CONFIG_HOME/pass-vera/vera.JSON*. A *.YAML* file can also be
-used. Examples are located at the bottom of this page in
-**CONFIGURATION**.
+If **\--conf** or **-c** is specified, with *a\|auto* or *c\|custom*,
+pass vera will attempt to *auto*matically choose the configuration file
+in the directory *\$XDG_CONFIG_HOME/pass-vera*. If only one
+configuration file is present, pass vera will automatically mount the
+password store. However, if multiple configuration files are present and
+*auto* is passed, an option will be presented to choose one of the
+configurations through **fzf(1)**. If you would like to bypass this
+prompt, use *c* or *custom* as a sub-argument (e.g., **\--conf custom**)
+and it will bring up a fuzzy finder to select the configuration. A
+*YAML* file can also be used. The only filetypes that are supported at
+this point are JSON and YAML. Examples are located at the bottom of this
+page in the **CONFIGURATION** section.
 
 If **\--force** is specified, the password vera will create or mount the
 password-store to a volume that is in use, or it will force dismount a
@@ -222,12 +229,15 @@ If **\--status** or **-s** is specified, the status of the vera (mounted
 or not) will be printed on the screen.
 
 If **\--usage** or **-u** is specified, the space used, space available,
-and percentage of space used on the container will be displayed.
+and percentage of space used on the container will be displayed. A
+sub-argument must be passed to get the correct container. The options
+are *c\|custom* and *a\|auto*, for example: **\--usage auto**.
 
 **pass open** \[**\--timer**=*time*, **-t** *time*\] \[**\--truecrypt**, **-y**\]
 
 :    \[**\--invisi-key**, **-i**\] \[**\--force**, **-f**\]
-    \[**\--conf**, **-c**\] \[*subfolder*\]
+    \[**\--conf**=\[*a\|auto\|\**\], **-c** \[*a\|auto\|\**\]\]
+    \[*subfolder*\]
 
 Open a password vera. If a *time* parameter is given (e.g., \"1 hour 5
 minutes\") then a launchctl agent will be loaded. After the specified
@@ -257,11 +267,12 @@ password-vera (by setting *PASSWORD_STORE_VERA_FILE* to a file created
 by TrueCrypt), then to open the password-vera, **\--truecrypt** or
 **-y** must also be specified.
 
-If **\--conf** or **-c** is specified, pass vera will use the
-information located within the configuration file
-(*\$XDG_CONFIG_HOME/pass-vera/vera.JSON*). The *\--ivisi-key* and
-*\--tmp-key* options are unable to be used when using a configuration
-file at this point.
+If **\--conf** or **-c** is specified when creating the vera, then *-c*
+or *\--conf* must be specified again when opening the vera so pass vera
+can use the information located within the configuration file
+(*\$XDG_CONFIG_HOME/pass-vera*). See *\--conf* in the **pass vera**
+section for more information, as well as the **CONFIGURATION** section
+at the bottom of this page.
 
 If **\--force** is specified, the password vera will create or mount the
 password-store to a volume that is in use, or it will force dismount a
@@ -271,11 +282,16 @@ If *subfolder* is specified, the password-store will be opened in the
 subfolder. Otherwise, pass vera will open in *PASSWORD_STORE_DIR* if
 set, and if not, then it will open in *\~/.password-store*.
 
-**pass close** \[**\--force**, **-f**\] \[**\--conf**, **-c**\] \[*store*\]
+**pass close** \[**\--force**, **-f**\] \[**\--conf**=\[*a\|auto\|\**\], **-c** \[*a\|auto\|\**\]\] \[*store*\]
 
 :   
 
 Close a password vera.
+
+If **\--conf** or **-c** was specified when creating the vera, it must
+again be specified when closing the vera. See *\--conf* in the **pass
+vera** section for more information, as well as the **CONFIGURATION**
+section at the bottom of this page.
 
 If **\--force** is specified, the password vera will create or mount the
 password-store to a volume that is in use, or it will force dismount a
@@ -302,7 +318,7 @@ OPTIONS
 
 **-g, \--gen-conf**
 
-:   Generate a JSON configuration file
+:   Generate a default JSON or YAML configuration file
 
 ```{=html}
 <!-- -->
@@ -310,8 +326,8 @@ OPTIONS
 
 **-c, \--conf**
 
-:   Use the configuration file placed at
-    \$XDG_CONFIG_HOME/pass-vera/vera.JSON
+:   Use the configuration file placed at \$XDG_CONFIG_HOME/pass-vera
+    (JSON or YAML)
 
 ```{=html}
 <!-- -->
@@ -475,8 +491,8 @@ Create a new password vera
     The VeraCrypt volume has been successfully created.\
     Enter password for \~/.password.vera:
     \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\
-    (\*) Your password vera has been created and opened in
-    \~/.password-store.\
+    (\*) Your password vera has been created and opened in:
+    \~/.password-store\
     (\*) password-store initialized for Jason\@zx2c4.com.\
     . Your vera is: \~/.password.vera\
     . Your vera key is: \~/.password.key.vera\
@@ -492,7 +508,7 @@ Open a password vera
 :   **zx2c4\@laptop \~ \$ pass open**\
     Enter password for \~/.password.vera:
     \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\
-    (\*) Your password vera has been opened in \~/.password-store.\
+    (\*) Your password vera has been opened in: \~/.password-store\
     . You can now use pass as usual.\
     . When finished, close the password vera using \'pass close\'.
 
@@ -504,7 +520,7 @@ Close a password vera
 
 :   **zx2c4\@laptop \~ \$ pass close**\
     (\*) Your password vera has been closed.\
-    . Your passwords remain present in \~/.password.vera.
+    . Your passwords remain present in: \~/.password.vera
 
 ```{=html}
 <!-- -->
@@ -540,13 +556,13 @@ Create a new password vera and set a timer
     Enter password for \~/.password.vera:
     \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\
     (\*) pass-close.password.vera.plist loaded\
-    (\*) Your password vera has been opened in \~/.password-store.\
+    (\*) Your password vera has been opened in: \~/.password-store\
     . You can now use pass as usual.\
     . This password-store will be closed in: 10 minutes\
     **zx2c4\@laptop \~ \$ pass open \--timer=\"10 minutes\"**\
     w The veracrypt drive is already mounted, not opening\
     (\*) pass-close.password.vera.plist timer has been updated\
-    (\*) Your password vera has been opened in \~/.password-store.\
+    (\*) Your password vera has been opened in: \~/.password-store\
     . You can now use pass as usual.\
     . This password-store will be closed in: 15 minutes
 
@@ -567,10 +583,34 @@ Create a password vera using an \'invisible key\' & copy an existing password-st
     The VeraCrypt volume has been successfully created.\
     Enter password for \~/.password.vera:
     \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\
-    (\*) Your password vera has been created and opened in
-    \~/password-store.\
+    (\*) Your password vera has been created and opened in:
+    \~/password-store\
     (\*) Password store initialized for Jason\@zx2c4.com\
     . Your vera is: \~/.password.vera\
+    . Your vera key is: /var/\~/dl7rz8zgn/T//pass.H9qIkMm/.invisi.key\
+    . You can now use pass as usual.\
+    . When finished, close the password vera using \'pass close\'.
+
+```{=html}
+<!-- -->
+```
+
+Create a password vera using a custom configuration file, as well as use an \'invisible key\'
+
+:   **zx2c4\@laptop \~ \$ pass vera Jason\@zx2c4.com \--conf c
+    \--invisi-key**\
+    . Using JSON configuration: vera.json\
+    Enter password: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\
+    Re-enter password: \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\
+    Done: 100.000% Speed: 6.1 MiB/s Left: 0 s\
+    The VeraCrypt volume has been successfully created.\
+    Enter password for \~/.password.vera:
+    \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\
+    (\*) Your password vera has been created and opened in:
+    \~/.password-store\
+    (\*) Password store initialized for Jason\@zx2c4.com\
+    . Your vera is: \~/.password.vera\
+    . Your conf is: /\$XDG_CONFIG_HOME/pass-vera/vera.json\
     . Your vera key is: /var/\~/dl7rz8zgn/T//pass.H9qIkMm/.invisi.key\
     . You can now use pass as usual.\
     . When finished, close the password vera using \'pass close\'.
@@ -605,7 +645,8 @@ CONFIGURATION
 The configuration file can be made in both *JSON* and *YAML* files. JSON
 files are preferred and are generated when using **pass vera
 \--gen-conf**. In the example YAML configuration file below, available
-options are mentioned above.
+options are mentioned above. For more information and explanations of
+these arguments, **veracrypt -t -h** can be ran.
 
 *YAML*
 
@@ -614,10 +655,17 @@ options are mentioned above.
     first)*\
     **create: /Users/user/.password.vera** *\# any file, full path*\
     **size: 15M** *\# any size*\
-    **encryption: AES** *\# aes, serpent, twofish, camellia,
-    kuznyechik*\
+    **encryption: aes-twofish-serpent**\
+    *\# (1) aes (2) serpent (3) twofish (4) camellia (5) kuznyechik*\
+    *\# (6) aes-twofish (7) aes-twofish-serpent (8)
+    camellia-kuznyechik*\
+    *\# (9) camellia-serpent (10) kuznyechik-aes (11)
+    kuznyechik-serpent-camellia*\
+    *\# (12) kuznyechik-twofish (13) serpent-aes (14)
+    serpent-twofish-aes *\
+    *\# (15) twofish-serpent*\
     **hash: sha-512** *\# sha-512, whirlpool, sha-256, streebog*\
-    **filesystem: exFAT** *\# non, fat, exfat, apfs, macOS extended*\
+    **filesystem: exFAT** *\# non, fat, exfat, apfs, mac-os-extended*\
     **pim: 0** *\# positive integer (Personal Iterations Multiplier)*\
     **keyfiles: /Users/user/.password.vera.key** *\# none, any file,
     full path*\
@@ -632,12 +680,17 @@ COMPLETIONS
 *ZSH*
 
 :   There are three *.zsh*** scripts that should be installed
-    automatically when calling the Makefile; however, there is a zsh**
-    script titled *passcomp*** which will modify pass\'s completion file
-    (***\_pass***) to allow for the three subcommands** associated with
-    **pass vera to work. The only way I have figured out how to call
-    them without this is to use ***pass-vera***,** though this is not a
-    command.
+    automatically when** calling the Makefile; however, there is a zsh
+    script titled *passcomp.zsh*** which** will modify **pass\'s
+    completion file (***\_pass***) to allow for the three subcommands**
+    associated with **pass vera to have completions called. The only way
+    I have** figured out how to call them without this is to use
+    *pass-vera***, though this** is not the command.
+
+The file can be modified and updated by running:\
+**./passcomp.zsh install**\
+The completions can be removed by running:\
+**./passcomp.zsh remove**
 
 *BASH*
 
@@ -647,8 +700,8 @@ COMPLETIONS
 SEE ALSO
 ========
 
-**pass(1),** **veracrypt(1),** **launchctl(1),** **pass-clip(1)**
-**pass-ssh(1),** **pass-import(1),** **pass-otp(1)**
+**pass(1),** **veracrypt(1),** **launchctl(1),** **fzf(1),**
+**pass-clip(1)** **pass-ssh(1),** **pass-import(1),**
 
 AUTHORS
 =======

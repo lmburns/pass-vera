@@ -17,7 +17,7 @@
 
 # shellcheck disable=SC2015,SC2181
 
-typeset -r VERSION="1.3"
+typeset -r VERSION="2.0"
 
 typeset -r RED=$(tput setaf 1) GREEN=$(tput setaf 2) YELLOW=$(tput setaf 3)
 typeset -r BLUE=$(tput setaf 4) MAGENTA=$(tput setaf 5) CYAN=$(tput setaf 6)
@@ -38,7 +38,6 @@ typeset -r TIMER_FILE="${PREFIX}/${path}/.timer"
 
 typeset -r uid="$(id -u "$USER")"
 typeset -r gid="$(id -g "$USER")"
-
 
 typeset -a VERA_MOUNT_OPTS VERA_CREATE_OPTS
 
@@ -79,9 +78,6 @@ _dependency_check() {
 	command -v "$VERA" &> /dev/null || _die "veracrypt is not present in \$PATH"
 	command -v rg &> /dev/null || _die "ripgrep is not present in \$PATH"
 	command -v sponge &> /dev/null || _die "GNU moreutils is not present in \$PATH"
-	command -v jq &> /dev/null || _die "jq is not present in \$PATH"
-	command -v yq &> /dev/null || _die "yq is not present in \$PATH"
-	command -v fzf &> /dev/null || _die "fzf is not present in \$PATH"
 	[[ $(uname) == "Darwin" && -x $PlistBuddy ]] || _die "pass-vera only supports macOS right now"
 }
 
@@ -99,14 +95,14 @@ cmd_vera_usage() {
 	${YELLOW}Usage:${RESET}
 	    ${GREEN}${PROGRAM} vera${RESET} ${MAGENTA}<${RESET}${CYAN}gpg-id${RESET}${MAGENTA}>${RESET} ${MAGENTA}[${RESET}${BLUE}-n${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-t${RESET} ${YELLOW}time${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-f${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-p${RESET} ${YELLOW}subfolder${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-y${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-s${RESET}${MAGENTA}]${RESET}
 	                            ${MAGENTA}[${RESET}${BLUE}-i${RESET} ${MAGENTA}|${RESET} ${BLUE}-k${RESET} ${MAGENTA}|${RESET} ${BLUE}--tmp-key${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}--for-me${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-r${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-o${RESET}${MAGENTA}]${RESET}
-	                            ${MAGENTA}[${RESET}${BLUE}-u${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET} ${YELLOW}[a | * ]${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-g${RESET} ${YELLOW}[JSON | YAML ]${RESET}${MAGENTA}]${RESET}
+	                            ${MAGENTA}[${RESET}${BLUE}-u ${YELLOW}[a | c ]${RESET}${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET} ${YELLOW}[a | c ]${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-g${RESET} ${YELLOW}[JSON | YAML ]${RESET}${MAGENTA}]${RESET}
 	        Create and initialize a new password vera
 	        Use gpg-id for encryption of both vera and passwords
 
-	   ${GREEN}${PROGRAM} open${RESET} ${MAGENTA}[${RESET}${YELLOW}subfolder${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-i${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-y${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-t${RESET} ${YELLOW}time${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET} ${YELLOW}[a | * ]${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-f${RESET}${MAGENTA}]${RESET}
+	   ${GREEN}${PROGRAM} open${RESET} ${MAGENTA}[${RESET}${YELLOW}subfolder${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-i${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-y${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-t${RESET} ${YELLOW}time${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET} ${YELLOW}[a | c ]${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${BLUE}-f${RESET}${MAGENTA}]${RESET}
 	          Open a password vera
 
-	    ${GREEN}${PROGRAM} close${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET} ${YELLOW}[a | * ]${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${YELLOW}store${RESET}${MAGENTA}]${RESET}
+	    ${GREEN}${PROGRAM} close${RESET} ${MAGENTA}[${RESET}${BLUE}-c${RESET} ${YELLOW}[a | c ]${RESET}${MAGENTA}]${RESET} ${MAGENTA}[${RESET}${YELLOW}store${RESET}${MAGENTA}]${RESET}
 	        Close a password vera
 
 	${MAGENTA}Options:${RESET}
@@ -123,8 +119,8 @@ cmd_vera_usage() {
 	    ${BLUE}-f${RESET}, ${BLUE}--force${RESET}          Force operation (i.e. even if mounted volume is active)
 	    ${BLUE}-s${RESET}, ${BLUE}--status${RESET}         Show status of pass vera (open or closed)
 	    ${BLUE}-u${RESET}, ${BLUE}--usage${RESET}          Show space available and space used on the container
-      ${BLUE}-c${RESET}, ${BLUE}--conf${RESET}           Use configuration file (fzf prompt)
-      ${BLUE}-g${RESET}, ${BLUE}--gen-conf${RESET}       Generate configuration file (JSON or YAML)
+	    ${BLUE}-c${RESET}, ${BLUE}--conf${RESET}           Use configuration file (fzf prompt)
+	    ${BLUE}-g${RESET}, ${BLUE}--gen-conf${RESET}       Generate configuration file (JSON or YAML)
 	    ${BLUE}-q${RESET}, ${BLUE}--quiet${RESET}          Be quiet
 	    ${BLUE}-v${RESET}, ${BLUE}--verbose${RESET}        Be verbose
 	    ${BLUE}-d${RESET}, ${BLUE}--debug${RESET}          Debug the launchd agent with a stderr file located in \$HOME folder
@@ -313,6 +309,7 @@ _vera() {
 
 # fuzzy finder for configuration directory
 _fzf_conf() {
+	command -v fzf &> /dev/null || _die "fzf is not present in \$PATH"
 	cust_conf_file="$(
 		fzf --ansi +m \
 				--exit-0 \
@@ -322,12 +319,13 @@ _fzf_conf() {
 	)"
 }
 
-# generate json configuration file
+# generate json or yaml configuration file
 _gen_conf() {
   local ftype="$1"
 	mkdir -p "$conf_dir"
 	case ${ftype,,} in
 		json)
+			command -v jq &> /dev/null || _die "jq needed to generate JSON configuration"
 			jq --arg key0 "volume-type" \
          --arg value0 'normal' \
          --arg key1   'size' \
@@ -357,6 +355,7 @@ _gen_conf() {
 			_success "Configuration example created: ${conf_dir}/vera.json"
 			 ;;
 		yaml)
+			command -v yq &> /dev/null || _die "yq is needed to generate YAML configuration"
       echo "\
         volume-type: normal
         create: ${PASSWORD_STORE_VERA_FILE:-$HOME/.password.vera}
@@ -383,14 +382,14 @@ _gen_conf() {
 _conf_file_type() {
 	local files cust_ext
 	_lsdir() {
-		/bin/ls -1A $conf_dir | rg --color=never "${@}" | wc -l
+		/bin/ls -1A "$conf_dir" | rg --color=never "${@}" | wc -l
 	}
 
 	files="$(_lsdir "\.json$|\.yaml$")"
 
 	if [[ -n "${PASSWORD_STORE_VERA_CONF}" ]]; then
 		VERA_CONF="${PASSWORD_STORE_VERA_CONF}"
-		_message "Using \${PASSWORD_STORE_VERA_CONF}"
+		_message "Using \$PASSWORD_STORE_VERA_CONF"
 	elif [[ $files -gt 1 ]]; then
 		_warning "More than one configuration..."
 		while true; do
@@ -399,6 +398,7 @@ _conf_file_type() {
 			case $choose_conf in
 				[Yy]*) break ;;
 				[Nn]*)
+						_warning "Do one of the following:"
 						_warning "${RED}(1)${RESET} Have only one configuration in the folder"
 						_warning "${RED}(2)${RESET} Do not use the auto command"
 						_warning "${RED}(3)${RESET} Set \$PASSWORD_STORE_VERA_CONF"
@@ -411,7 +411,7 @@ _conf_file_type() {
     cust_conf_file="${cust_conf_file##*/}"
 		cust_ext=${cust_conf_file#*.}
 		[[ ! "${cust_ext,,}" =~ (yaml|json) ]] && _die "Filetype must be JSON or YAML"
-		# PASSWORD_STORE_VERA_CONF:+ is there just as a precaution
+		# PASSWORD_STORE_VERA_CONF:+ is there as a precaution
 		_message "Using ${cust_ext^^} configuration: ${CYAN}${cust_conf_file}${RESET} ${PASSWORD_STORE_VERA_CONF:+ -- NOTE: \$PASSWORD_STORE_VERA_CONF is set, using that instead}"
 		VERA_CONF="${conf_dir}/${cust_conf_file}"
 	elif [[ $(_lsdir "\.json$") -eq 1 ]]; then
@@ -425,21 +425,27 @@ _conf_file_type() {
 
 # parse configuration file
 _check_conf() {
-  local conf_type="$1"
-	auto="(^|:)auto|a(:|$)"
-	if [[ ! ${conf_type} =~ ${auto} ]]; then
-		_fzf_conf
-		VERA_CONF="${conf_dir}/${cust_conf_file}"
-	else
-		_conf_file_type
-	fi
+	local conf_type="$1"
+	case "${conf_type}" in
+		c|custom)
+			# choose custom configuration with fzf
+			_fzf_conf
+			VERA_CONF="${conf_dir}/${cust_conf_file}"
+			;;
+		a|auto)
+			# automatically choose the one configuration
+			_conf_file_type
+			;;
+		*) _die "Choose a|auto or c|custom"
+			;;
+	esac
 	if [[ -e $VERA_CONF ]]; then
 		check_sneaky_paths "$VERA_CONF"
 		typeset -A VERA_CREATE_CONF
 		VERA_CREATE_CONF=()
 		if [[ ${VERA_CONF: -4} == "yaml" ]]; then
-			while read l; do
-				if echo $l | rg --color=never -F '=' &>/dev/null; then
+			while read -r l; do
+				if echo "$l" | rg --color=never -F '=' &>/dev/null; then
 					vname=$(echo "$l" | cut -d '=' -f1)
 					VERA_CREATE_CONF[$vname]=$(echo "$l" | cut -d '=' -f2-)
 				fi
@@ -469,7 +475,10 @@ _check_conf() {
 			IFS=" " read -r -a VERA_CREATE_OPTS <<< "$(
 			for x in "${!VERA_CREATE_CONF[@]}"; do
 				if [[ $x == 'truecrypt' || $x = 'unsafe' ]]; then
-					printf "%s" "--${x}"
+					printf "%s " "--${x}"
+				elif [[ $x == 'keyfiles' ]]; then
+					printf "%s " "--${x}"
+					printf "%s " "${VERA_CREATE_CONF[$x]}"
 				else
 					printf "%s=%s " "--${x}" "${VERA_CREATE_CONF[$x]// /-}"
 				fi
@@ -553,14 +562,37 @@ _check_key() {
 	fi
 }
 
+# get the available space on any vera container
 _show_usage() {
 	local all size used avail use
+	local cust_vera="$1"
 	_status || _die "pass-vera not mounted"
-	all=$(df -h "$("$VERA" --text --list | grep 'password.vera' | rev | cut -d ' ' -f1 | rev)")
-	size=$(awk 'NR==2{print $2}' <<< $all)
-	used=$(awk 'NR==2{print $3}' <<< $all | tr -d '[:upper:]')
-	avail=$(awk 'NR==2{print $4}' <<< $all)
-	use=$(awk 'NR==2{print $5}' <<< $all)
+	case "${cust_vera}" in
+		c|custom)
+				all="$(
+				df -h "$(
+					"$VERA" --text --list \
+					| fzf --ansi +m \
+								--exit-0 \
+								--delimiter / \
+								--with-nth -2,-1 \
+								--prompt="vera containers> " \
+					| rev | cut -d ' ' -f1 | rev
+					)"
+				)"
+				;;
+		a|auto)
+				all=$(df -h "$("$VERA" --text --list | grep 'password.vera' | rev | cut -d ' ' -f1 | rev)")
+				;;
+		*) _die "Chose a|auto or c|custom"
+				;;
+	esac
+	size=$(awk 'NR==2{print $2}' <<< "$all")
+	used=$(awk 'NR==2{print $3}' <<< "$all")
+	avail=$(awk 'NR==2{print $4}' <<< "$all")
+	use=$(awk 'NR==2{print $5}' <<< "$all")
+	# convert kilobyte to megabyte if need be
+	[[ ${used: -1} == "K" ]] && used="$(bc <<< "scale=2; ${used%?} / 1000")"
 
 	if [[ ${use%?} -gt 80 ]]; then
 		local COLOR="${GREEN}"
@@ -623,6 +655,7 @@ cmd_open() {
 	fi
 
 	# command executed as planned
+	[[ -n $VERA_CONF ]] && _message "Your conf is: ${CYAN}${VERA_CONF}${RESET}"
 	_success "Your password vera has been opened in ${PREFIX}/${path}."
 	_message "You can now use pass as usual."
 	# _show_usage
@@ -665,6 +698,7 @@ cmd_close() {
 	fi
 
 	_success "Your password vera has been closed"
+	[[ -n $VERA_CONF ]] && _message "Your conf is: ${CYAN}${VERA_CONF}${RESET}"
 	_message "Your passwords remain present in ${BLUE}$_vera_file${RESET}"
 	return 0
 }
@@ -788,7 +822,7 @@ cmd_vera() {
 	_success "Your password vera has been created and opened in: ${CYAN}${PREFIX}/${path}${RESET}"
 	[[ -z "$ret" ]] || _success "$ret"
 	_message "Your vera is: ${CYAN}${VERA_FILE}${RESET}"
-  _message "Your conf is: ${CYAN}${VERA_CONF}${RESET}"
+	[[ -n $VERA_CONF ]] && _message "Your conf is: ${CYAN}${VERA_CONF}${RESET}"
 
 	for f in $invisi_vera $tmp_vera $VERA_KEY; do
 		[[ -e "$f" ]] && _message "Your vera key is: ${CYAN}${f}${RESET}"
@@ -837,8 +871,8 @@ CONF=0
 CUST_CONF=""
 
 # program arguments using GNU getopt
-small_arg="vhVdokrug:yc:isp:qnt:f"
-long_arg="verbose,help,debug,version,overwrite-key,vera-key,path:,truecrypt,unsafe,quiet,no-init,timer:,force,status,tmp-key,for-me,reencrypt,invisi-key,usage,conf:,gen-conf:"
+small_arg="vhVdokrg:yc:isp:qnt:fu:"
+long_arg="verbose,help,debug,version,overwrite-key,vera-key,path:,truecrypt,unsafe,quiet,no-init,timer:,force,status,tmp-key,for-me,reencrypt,invisi-key,usage:,conf:,gen-conf:"
 opts="$($GETOPT -o $small_arg -l $long_arg -n "$PROGRAM $COMMAND" -- "$@")"
 err=$?
 eval set -- "$opts"
@@ -846,7 +880,7 @@ while true; do case $1 in
 	-q|--quiet) QUIET=1; VERBOSE=0; shift ;;
 	-v|--verbose) VERBOSE=1; shift ;;
 	-o|--overwrite-key) OVERWRITE_KEY=1; shift ;;
-	-u|--usage) _show_usage; exit 1 ;;
+	-u|--usage) _show_usage "$2"; shift; exit 0 ;;
 	-k|--vera-key) MAKE_VERAKEY=1; shift ;;
 	-i|--invisi-key) INVISI_KEY=1; shift ;;
   -g|--gen-conf) _gen_conf "$2"; shift 2; exit 0 ;;

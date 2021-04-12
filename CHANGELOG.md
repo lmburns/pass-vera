@@ -1,4 +1,12 @@
 
+<a name="v1.4"></a>
+## [v1.4](https://github.com/lmburns/pass-vera/compare/v1.3.1...v1.4) (2021-04-10)
+
+### Added
+
+* added YAML and JSON config options, custom config, fzf selection
+
+
 <a name="v1.3.1"></a>
 ## [v1.3.1](https://github.com/lmburns/pass-vera/compare/v1.3...v1.3.1) (2021-04-09)
 

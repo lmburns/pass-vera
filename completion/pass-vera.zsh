@@ -10,12 +10,14 @@ _pass-vera() {
 		{-p,--path}'[gpg-id will only be applied to this subfolder]:dirs:_pass_complete_entries_with_dirs' \
 		{-n,--no-init}'[do not initialise the password store]' \
 		{-t,--timer}'[close the store after a given time]' \
-		{-c,--truecrypt}'[enable TrueCrypt compatibility mode]' \
+		{-y,--truecrypt}'[enable TrueCrypt compatibility mode]' \
+		{-c,--conf}'[use a configuration file (auto | *)]' \
+		{-g,--gen-conf}'[generate a config (JSON | YAML)]' \
 		{-k,--vera-key}'[use /dev/urandom to create key]' \
-    {-i,--invisi-key}'[create a key that deletes itself, but is reusable]' \
+		{-i,--invisi-key}'[create a key that deletes itself, but is reusable]' \
 		'--tmp-key[create a one-time key]' \
-    '--for-me[copy the existing password-store to the location of the new one]' \
-    {-r,--reencrypt}'[re-encrypt the files as their being copied to new location (use with --for-me)]' \
+		'--for-me[copy the existing password-store to the location of the new one]' \
+		{-r,--reencrypt}'[re-encrypt the files as their being copied to new location (use with --for-me)]' \
 		{-o,--overwrite-key}'[overwrite existing key]' \
 		{-s,--status}'[get status of the vera (i.e., mounted or not)]' \
 		{-f,--force}'[force operation (i.e. even if operations are happening)]' \

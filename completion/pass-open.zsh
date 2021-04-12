@@ -6,8 +6,9 @@ _pass-open () {
 		{-h,--help}'[display help information]' \
 		{-V,--version}'[display version information]' \
 		{-t,--timer}'[close the store after a given time]' \
-    {-c,--truecrypt}'[enable TrueCrypt compatibility mode]' \
-    {-i,--invisi-key}'[use the key that deletes itself]' \
+		{-y,--truecrypt}'[enable TrueCrypt compatibility mode]' \
+		{-c,--conf}'[use a configuration file (auto | *)]' \
+		{-i,--invisi-key}'[use the key that deletes itself]' \
 		{-f,--force}'[force mounting (i.e. even if operations are happening)]' \
 		{-q,--quiet}'[be quiet]' \
 		{-v,--verbose}'[be verbose]' \

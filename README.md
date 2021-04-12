@@ -6,7 +6,7 @@ A [`pass`](https://www.passwordstore.org/) extension that encrypts the entire pa
 
 The file and directory names in the password-store that is created by `pass` are not encrypted and are available for anyone with access to the computer to see. `pass vera` provides a solution to this problem by moving the password-store to an encrypted drive created by `veracrypt`. The password-store can be encrypted (i.e., the folder doesn't exist) when it is not being used.
 
-The same GPG key (by default) is used to encrypt passwords and the veracrypt drive, therefore one doesn't need to manage another key. There is also an option to move an existing password-store to the location of the new one without any manual intervention. Moreover,  pass-vera can be given a timer as an argument that will automatically close the password-store after the specified amount of time has passed
+The same GPG key (by default) is used to encrypt passwords and the veracrypt container, therefore one doesn't need to manage another key. There is also an option to move an existing password-store to the location of the new one without any manual intervention. Moreover,  pass-vera can be given a timer as an argument that will automatically close the password-store after the specified amount of time has passed
 
 ### Before Using this Program
 
@@ -29,20 +29,20 @@ The text file created in this process is used as a keyfile to the vera. It works
 ### Usage
 
 ```
-pass vera 1.3 - A pass extension that adds another layer of encryption
+pass vera 2.0 - A pass extension that adds another layer of encryption
 by encrypting the password-store inside a veracrypt drive.
 
 Usage:
     pass vera <gpg-id> [-n] [-t time] [-f] [-p subfolder] [-y] [-s]
                             [-i | -k | --tmp-key] [--for-me] [-r] [-o]
-                            [-u] [-c] [-g]
+                            [-u [a | c ]] [-c [a | c ]] [-g [JSON | YAML ]]
         Create and initialize a new password vera
         Use gpg-id for encryption of both vera and passwords
 
-   pass open [subfolder] [-i] [-c] [-t time] [-c] [-f]
+   pass open [subfolder] [-i] [-y] [-t time] [-c [a | c ]] [-f]
           Open a password vera
 
-    pass close [-c] [store]
+    pass close [-c [a | c ]] [store]
         Close a password vera
 
 Options:
@@ -59,8 +59,8 @@ Options:
     -f, --force          Force operation (i.e. even if mounted volume is active)
     -s, --status         Show status of pass vera (open or closed)
     -u, --usage          Show space available and space used on the container
-    -c, --conf           Use configuration file (no path needed)
-    -g, --gen-conf       Generate configuration file
+    -c, --conf           Use configuration file (fzf prompt)
+    -g, --gen-conf       Generate configuration file (JSON or YAML)
     -q, --quiet          Be quiet
     -v, --verbose        Be verbose
     -d, --debug          Debug the launchd agent with a stderr file located in $HOME folder
@@ -191,6 +191,31 @@ zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --for-me --invisi-key
   .  When finished, close the password vera using 'pass close'.
 ```
 
+#### Create  a password vera using a custom configuration file, as well as use an 'invisible key'
+
+A configuration option was added in version 2.0. It allows for the user to create their own settings for the creation of the veracrypt container. The default configuration can be generated in either a JSON or YAML format by using the command `pass vera --gen-conf (JSON|YAML)`. The file will be in `$XDG_CONFIG_HOME` or `$HOME/.config`. The settings can be modified according to the available options which can be seen in `pass vera`'s man page or by using `veracrypt --text --help`.
+
+If the `--conf` option is specified when creating the `vera`, then the option will once again need to be specified when opening and closing the `vera`. More than one configuration file can be present in the same directory, and for this to work `--conf` must be specified with the `c` or `custom` sub-argument. A selection menu using `fzf` will be displayed for one to choose their configuration.
+
+If there is only one configuration file present, then `--conf` must be specified with the `a` or `auto` sub-argument. There is also an option for `$PASSWORD_STORE_VERA_CONF` to be set to the location of the one and only configuration file. If this is set, then there is no way to use more than one configuration.
+
+```
+zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --conf c --invisi-key
+  .  Using JSON configuration: vera.json
+  Enter password: ****************
+  Re-enter password: ****************
+  Done: 100.000%  Speed: 6.1 MiB/s  Left: 0 s
+  The VeraCrypt volume has been successfully created.
+
+  Enter password for ~/.password.vera: ****************
+  (*) Your password vera has been created and opened in: ~/.password-store
+  (*) Password store initialized for Jason@zx2c4.com
+   .  Your vera is: ~/.password.vera
+   .  Your conf is: /$XDG_CONFIG_HOME/pass-vera/vera.json
+   .  Your vera key is: /var/~/dl7rz8zgn/T//pass.H9qIkMm/.invisi.key
+   .  You can now use pass as usual.
+   .  When finished, close the password vera using 'pass close'.
+```
 ---
 ### Environmental Variables
 
@@ -198,12 +223,14 @@ zx2c4@laptop ~ $ pass vera Jason@zx2c4.com --for-me --invisi-key
 - `PASSWORD_STORE_VERA_FILE`: Path to the password vera, by default `~/.password.vera`
 - `PASSWORD_STORE_VERA_KEY`: Path to the password vera key file by default `~/.password.key.vera`
 - `PASSWORD_STORE_VERA_SIZE`: Password vera size in MB, by default `10`
+- `PASSWORD_STORE_VERA_CONF`: Location of configuration file
 
 ---
 ### Installation
 
 **Requirements (minimal versions)**:
 - `pass 1.7.3`
+- `fzf`, `jq`, and `yq` are needed if more than one configuration is going to be used
 - `veracrypt 1.24-Update8`
     - `osxfuse` is a requirement for `veracrypt`
 - `launchd 7.0.0`
@@ -259,27 +286,44 @@ To use multiple `vera` containers, there is an option to create a configuration 
 
 #### YAML
 
-If, for whatever reason, one would like to use a YAML file instead of a JSON, this filetype is also supported. Below are all available options for each argument. There is also a [directory](example_configs) of example configuration files in both JSON and YAML.
+If one would prefer to use a YAML file instead, the file type is also supported. Below are all available options for each argument. There is also a [directory](example_configs) of example configuration files in both JSON and YAML.
 
 ```yaml
-volume-type:    normal # normal, hidden (if hidden, a normal volume must be created first)
-create:         /Users/username/.password.vera  # any file
-size:           15M     # any size
-encryption:     AES     # aes, serpent, twofish, camellia, kuznyechik
+volume-type:    normal # normal, hidden (hidden requires normal first)
+create:         /Users/user/.password.vera # any file, full path
+size:           15M # any size
+encryption:     aes-twofish-serpent
+# (1) aes (2) serpent (3) twofish (4) camellia (5) kuznyechik
+# (6) aes-twofish (7) aes-twofish-serpent (8) camellia-kuznyechik
+# (9) camellia-serpent (10) kuznyechik-aes (11) kuznyechik-serpent-camellia
+# (12) kuznyechik-twofish (13) serpent-aes (14) serpent-twofish-aes
+# (15) twofish-serpent
 hash:           sha-512 # sha-512, whirlpool, sha-256, streebog
-filesystem:     exFAT   # non, fat, exfat, apfs, macOS extended
-pim:            0   # positive integer (Personal Iterations Multiplier)
-keyfiles:       /Users/username/.password.vera.key  # none, any file
-random-source:  /dev/urandom    # none, urandom
-truecrypt:      0   # 1 or 0
-unsafe:         0   # 1 or 0
-slot:           0   # slot to mount container
+filesystem:     exFAT # non, fat, exfat, apfs, mac-os-extended
+pim:            0 # positive integer (Personal Iterations Multiplier)
+keyfiles:       /Users/user/.password.vera.key # none, any file, full path
+random-source:  /dev/urandom # none, urandom
+truecrypt:      0 # 1 or 0
+unsafe:         0 # 1 or 0
+slot:           0 # slot number to mount container
 ```
 
 ---
 ### Shell Completions
 
-There is a script in the `pass-scripts` folder titled `passcomp`. It is a zsh script that will find the completion file (`_pass`) for `pass` and will modify the subcommands so that the completions will actually work. There are zsh and bash completion files for each subcommand that I have created (`vera`, `open`, `close`) which will be called in `_pass`. The only way that I have figured out how to get the completion to call without this is if a hyphen is added between the commands, e.g., `pass-vera`; however, this is not a command so the script is a workaround for now.
+There is a script in the `pass-scripts` folder titled `passcomp.zsh`. It is a `zsh` script that will find the completion file (`_pass`) for `pass` and will modify the subcommands so that the completions will actually work. There are zsh and bash completion files for each subcommand that I have created (`vera`, `open`, `close`) which will be called in `_pass`.
+
+This is the only way that I have figured out how to get the completion to call correctly. The only other way is to use `pass-vera` (with a hyphen), which is not a command.
+
+The script has the following options:
+
+```sh
+# the file can be modified and updated by running:
+./passcomp.zsh install
+
+# the completions can be removed by running:
+./passcomp.zsh remove
+```
 
 ---
 ### TODO
