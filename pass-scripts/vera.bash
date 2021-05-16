@@ -69,16 +69,16 @@ _fancy_output() { _test_toilet "$1" || _test_figlet "$1" || _success "$1"; }
 _screenlength() { _test_lolcat; printf "%$(tput cols)s%b" | tr " " "=" | "$lolcat" >&2; }
 
 # mime-checker functions
-_check_gpg_mime() { file -Ib "$VERA_KEY" | rg --color=never -q 'pgp-encrypted'; }
-_check_decrypted_mime() { file -Ib "$VERA_KEY" | rg --color=never -q 'plain'; }
-_check_vera_mime() { file -Ib "$VERA_KEY" | rg --color=never -q 'octet-stream'; }
+_check_gpg_mime() { file --mime --brief "$VERA_KEY" | rg --color=never -q 'pgp-encrypted'; }
+_check_decrypted_mime() { file --mime --brief "$VERA_KEY" | rg --color=never -q 'plain'; }
+_check_vera_mime() { file --mime --brief "$VERA_KEY" | rg --color=never -q 'octet-stream'; }
 
 # check dependencies needed to use pass vera
 _dependency_check() {
-	command -v "$VERA" &> /dev/null || _die "veracrypt is not present in \$PATH"
-	command -v rg &> /dev/null || _die "ripgrep is not present in \$PATH"
-	command -v sponge &> /dev/null || _die "GNU moreutils is not present in \$PATH"
-	[[ $(uname) == "Darwin" && -x $PlistBuddy ]] || _die "pass-vera only supports macOS right now"
+  [[ -x "$(command -v "$VERA")" ]] || _die "veracrypt is not present in \$PATH"
+  [[ -x "$(command -v rg)" ]] || _die "ripgrep is not present in \$PATH"
+  [[ -x "$(command -v sponge)" ]] || _die "GNU moreutils is not present in \$PATH"
+  [[ $(uname) == "Darwin" && -x $PlistBuddy ]] || _die "pass-vera only supports macOS right now"
 }
 
 cmd_vera_version() {
@@ -310,7 +310,7 @@ _vera() {
 
 # fuzzy finder for configuration directory
 _fzf_conf() {
-  command -v fzf &> /dev/null || _die "fzf is not present in \$PATH"
+  [[ -x "$(command -v fzf)" ]] || _die "fzf is not present in \$PATH"
   cust_conf_file="$(
     fzf --ansi +m \
         --exit-0 \
@@ -321,12 +321,13 @@ _fzf_conf() {
 }
 
 # generate json or yaml configuration file
+# $1: file type user generates (either YAML or JSON)
 _gen_conf() {
   local ftype="$1"
   mkdir -p "$conf_dir"
   case ${ftype,,} in
     json)
-      command -v jq &> /dev/null || _die "jq needed to generate JSON configuration"
+      [[ -x "$(command -v jq)" ]] || _die "jq needed to generate JSON configuration"
       jq --arg key0 "volume-type" \
          --arg value0 'normal' \
          --arg key1   'size' \
@@ -356,7 +357,7 @@ _gen_conf() {
       _success "Configuration example created: ${conf_dir}/vera.json"
        ;;
     yaml)
-      command -v yq &> /dev/null || _die "yq is needed to generate YAML configuration"
+      [[ -x "$(command -v yq)" ]] || _die "yq is needed to generate YAML configuration"
       echo "\
         volume-type: normal
         create: ${PASSWORD_STORE_VERA_FILE:-$HOME/.password.vera}
@@ -426,6 +427,7 @@ _conf_file_type() {
 }
 
 # parse configuration file
+# $1: user input of custom config or auto config
 _check_conf() {
   local conf_type="$1"
   case "${conf_type}" in
@@ -566,7 +568,7 @@ _check_key() {
 
 # get the available space on any vera container
 _show_usage() {
-  local all size used avail use
+  local all size used use
   local cust_vera="$1"
   _status || _die "pass-vera not mounted"
   case "${cust_vera}" in
@@ -591,7 +593,6 @@ _show_usage() {
   esac
   size=$(awk 'NR==2{print $2}' <<< "$all")
   used=$(awk 'NR==2{print $3}' <<< "$all")
-  avail=$(awk 'NR==2{print $4}' <<< "$all")
   use=$(awk 'NR==2{print $5}' <<< "$all")
   # convert kilobyte to megabyte if need be
   [[ ${used: -1} == "K" ]] && used="$(bc <<< "scale=2; ${used%?} / 1000")"
@@ -750,7 +751,7 @@ cmd_vera() {
     _warning "Only use it for testing purposes."
     local unsafe=( "--quick" )
     # check in case it was used in a custom config
-    if [[ ! "${VERA_CREATE_OPTS[@]}" =~ ${unsafe[@]} ]]; then
+    if [[ ! "${VERA_CREATE_OPTS[*]}" =~ ${unsafe[*]} ]]; then
       VERA_CREATE_OPTS=( "${VERA_CREATE_OPTS[@]:0:1}" "${unsafe[@]}" "${VERA_CREATE_OPTS[@]:1}" )
     fi
   fi
@@ -879,30 +880,30 @@ opts="$($GETOPT -o $small_arg -l $long_arg -n "$PROGRAM $COMMAND" -- "$@")"
 err=$?
 eval set -- "$opts"
 while true; do case $1 in
-	-q|--quiet) QUIET=1; VERBOSE=0; shift ;;
-	-v|--verbose) VERBOSE=1; shift ;;
-	-o|--overwrite-key) OVERWRITE_KEY=1; shift ;;
-	-u|--usage) _show_usage "$2"; shift; exit 0 ;;
-	-k|--vera-key) MAKE_VERAKEY=1; shift ;;
-	-i|--invisi-key) INVISI_KEY=1; shift ;;
-	-g|--gen-conf) _gen_conf "$2"; shift 2; exit 0 ;;
-	-c|--conf) CUST_CONF="$2"; CONF=1; shift 2 ;;
-	--tmp-key) TMP_KEY=1; shift ;;
-	--for-me) DIFM=1; shift ;;
-	-r|--reencrypt) REENCRYPT=1; shift ;;
-	-f|--force) FORCE="--force"; shift ;;
-	-h|--help) shift; cmd_vera_usage; exit 0 ;;
-	-V|--version) shift; cmd_vera_version; exit 0 ;;
-	-p|--path) id_path="$2"; shift 2 ;;
-	-t|--timer) TIMER="$2"; shift 2 ;;
-	-n|--no-init) NOINIT=1; shift ;;
-	-y|--truecrypt) TRUECRYPT="--truecrypt"; shift ;;
-	-s|--status) STATUS=1; shift ;;
-	-d|--debug) DEBUG=1; shift ;;
-	--unsafe) UNSAFE=1; shift ;;
-	--) shift; break ;;
+  -q|--quiet) QUIET=1; VERBOSE=0; shift ;;
+  -v|--verbose) VERBOSE=1; shift ;;
+  -o|--overwrite-key) OVERWRITE_KEY=1; shift ;;
+  -u|--usage) _show_usage "$2"; shift; exit 0 ;;
+  -k|--vera-key) MAKE_VERAKEY=1; shift ;;
+  -i|--invisi-key) INVISI_KEY=1; shift ;;
+  -g|--gen-conf) _gen_conf "$2"; shift 2; exit 0 ;;
+  -c|--conf) CUST_CONF="$2"; CONF=1; shift 2 ;;
+  --tmp-key) TMP_KEY=1; shift ;;
+  --for-me) DIFM=1; shift ;;
+  -r|--reencrypt) REENCRYPT=1; shift ;;
+  -f|--force) FORCE="--force"; shift ;;
+  -h|--help) shift; cmd_vera_usage; exit 0 ;;
+  -V|--version) shift; cmd_vera_version; exit 0 ;;
+  -p|--path) id_path="$2"; shift 2 ;;
+  -t|--timer) TIMER="$2"; shift 2 ;;
+  -n|--no-init) NOINIT=1; shift ;;
+  -y|--truecrypt) TRUECRYPT="--truecrypt"; shift ;;
+  -s|--status) STATUS=1; shift ;;
+  -d|--debug) DEBUG=1; shift ;;
+  --unsafe) UNSAFE=1; shift ;;
+  --) shift; break ;;
 esac done
 
-[[ -z "$TIMER" ]] || command -v launchctl &> /dev/null || _die "launchctl is not present"
+[[ -z "$TIMER" ]] || [[ -x "$(command -v launchctl)" ]] || _die "launchctl is not present"
 [[ $err -ne 0 ]] && cmd_vera_usage && exit 1
 [[ "$COMMAND" == "vera" ]] && cmd_vera "$id_path" "$@"

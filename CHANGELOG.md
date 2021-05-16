@@ -1,10 +1,14 @@
 
 <a name="v2.0"></a>
-## [v2.0](https://github.com/lmburns/pass-vera/compare/v1.4...v2.0) (2021-04-11)
+## [v2.0](https://github.com/lmburns/pass-vera/compare/v1.4...v2.0) (2021-04-12)
 
 ### Added
 
 * Added configuration options, working with invisi-key, status for multiple containers
+
+### Removed
+
+* removed tabs for readability
 
 
 <a name="v1.4"></a>

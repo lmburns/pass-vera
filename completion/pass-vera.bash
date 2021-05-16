@@ -9,9 +9,9 @@ _pass_complete_veras() {
 
 __password_store_extension_complete_vera() {
 	local args=(-h --help -n --no-init -t --timer -p --path -f --force
-		-c --truecrypt -k --vera-key --tmp-key -o -i --invisi-key --for-me
+		-y --truecrypt -k --vera-key --tmp-key -o -i --invisi-key --for-me
 		--overwrite-key -s --status --for-me -r --reencrypt -q --quiet
-		-v --verbose -d --debug --unsafe -V --version)
+		-g --gen-conf -c --conf -v --verbose -d --debug --unsafe -V --version)
 	local lastarg="${COMP_WORDS[$COMP_CWORD-1]}"
 	if [[ $lastarg == "-p" || $lastarg == "--path" ]]; then
 		_pass_complete_folders
@@ -24,14 +24,14 @@ __password_store_extension_complete_vera() {
 
 __password_store_extension_complete_open() {
 	local args=(-h --help -t --timer -f --force -v --verbose -d --debug
-		-q --quiet -V --version -c --truecrypt -i --invisi-key)
+		-c --conf -q --quiet -V --version -c --truecrypt -i --invisi-key)
 	COMPREPLY+=($(compgen -W "${args[*]}" -- ${cur}))
 	_pass_complete_entries
 	compopt -o nospace
 }
 
 __password_store_extension_complete_close() {
-	local args=(-f --force -h --help -v --verbose -d --debug
+	local args=(-f --force -h --help -v --verbose -d --debug -c --conf
 		-q --quiet -V --version)
 	COMPREPLY+=($(compgen -W "${args[*]}" -- ${cur}))
 	_pass_complete_veras

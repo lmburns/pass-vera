@@ -9,7 +9,10 @@ class PassVera < Formula
 
   depends_on "pass"
   depends_on "coreutils"
+  depends_on "moreutils"
   depends_on "ripgrep"
+  depends_on "jq" => :optional
+  depends_on "yq" => :optional
   depends_on "lolcat" => :optional
   depends_on "figlet" => :optional
   depends_on "toilet" => :optional
